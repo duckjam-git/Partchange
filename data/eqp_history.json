@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T13:58:59.982Z",
+  "updatedAt": "2026-10-17T13:59:05.176Z",
   "partsCatalog": [
     "AMU Graphite",
     "SRA",
@@ -529,6 +529,25 @@
       }
     },
     "IAT3841": {
+      "prcGroup": "LE",
+      "parts": [
+        "AMU Graphite",
+        "SRA",
+        "Beam Stoppper",
+        "Stopper Housing",
+        "Quad Tube",
+        "Scanner"
+      ],
+      "history": {
+        "AMU Graphite": [],
+        "SRA": [],
+        "Beam Stoppper": [],
+        "Stopper Housing": [],
+        "Quad Tube": [],
+        "Scanner": []
+      }
+    },
+    "IAT3842": {
       "prcGroup": "LE",
       "parts": [
         "AMU Graphite",
