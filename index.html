@@ -104,18 +104,7 @@
     }
     .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* Mode Switch & Filter */
-    .mode-switch {
-      display: inline-flex; background: #f1f5f9; padding: 4px; border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .mode-btn {
-      border: none; background: transparent; padding: 6px 14px; border-radius: 7px;
-      font-size: 13px; font-weight: 700; color: #64748b;
-    }
-    .mode-btn.active-rep { background: var(--rep-badge); color: #fff; }
-    .mode-btn.active-cln { background: var(--cln-badge); color: #fff; }
-
+    /* Filter Switch */
     .filter-switch {
       display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 8px;
       border: 1px solid var(--border);
@@ -132,7 +121,10 @@
       overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     table.history-table {
-      width: 100%; border-collapse: collapse; min-width: 1150px;
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
     }
     table.history-table th, table.history-table td {
       border: 1px solid #334155; padding: 0; text-align: center; height: 42px;
@@ -146,22 +138,34 @@
       color: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;
       margin-bottom: 3px;
     }
-    .eqp-id-cell {
-      font-weight: 800; font-size: 15px; width: 140px; background: #ffffff;
+    /* 폭 절대 불변 고정 (min-width, max-width, width 3중 잠금) */
+    .eqp-id-cell, th#thCol1 {
+      width: 140px !important;
+      min-width: 140px !important;
+      max-width: 140px !important;
+      background: #ffffff;
+      font-weight: 800; font-size: 15px;
       vertical-align: middle; letter-spacing: 0.3px; padding: 6px 4px !important;
+      box-sizing: border-box;
     }
-    .part-cell {
-      width: 320px; background: #ffffff; padding: 0 10px !important; text-align: left;
+    .part-cell, th#thCol2 {
+      width: 320px !important;
+      min-width: 320px !important;
+      max-width: 320px !important;
+      background: #ffffff;
+      padding: 0 10px !important; text-align: left;
+      box-sizing: border-box;
     }
     .part-cell-inner {
       display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 100%;
     }
     .part-info-area { display: flex; flex-direction: column; justify-content: center; gap: 2px; flex: 1; }
-    .part-name-btn {
-      font-weight: 700; cursor: pointer; font-size: 13px; color: #0f172a;
-      display: inline-flex; align-items: center; gap: 6px; user-select: none;
+    
+    .part-name-label {
+      font-weight: 700; font-size: 13px; color: #0f172a;
+      display: inline-flex; align-items: center; gap: 6px; user-select: text;
+      cursor: default;
     }
-    .part-name-btn:hover { color: var(--accent); text-decoration: underline; }
     
     .cycle-status-badge {
       display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
@@ -172,10 +176,10 @@
     .cycle-status-badge.status-normal { background: var(--alert-green-bg); color: var(--alert-green-text); border-color: var(--alert-green-border); }
     .cycle-status-badge.status-none { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
 
-    .quick-actions { display: flex; gap: 3px; opacity: 0.9; }
+    .quick-actions { display: flex; gap: 4px; }
     .q-btn {
-      padding: 3px 6px; font-size: 10px; font-weight: 800; border-radius: 4px;
-      border: 1px solid transparent; cursor: pointer;
+      padding: 4px 8px; font-size: 11px; font-weight: 800; border-radius: 5px;
+      border: 1px solid transparent; cursor: pointer; transition: all 0.15s;
     }
     .q-btn.rep { background: var(--rep-bg); color: var(--rep-text); border-color: var(--rep-border); }
     .q-btn.rep:hover { background: var(--rep-badge); color: #fff; }
@@ -184,8 +188,12 @@
 
     /* History Date Cells */
     .date-cell {
-      min-width: 96px; width: 96px; cursor: pointer; position: relative;
+      width: 96px !important;
+      min-width: 96px !important;
+      max-width: 96px !important;
+      cursor: pointer; position: relative;
       transition: all 0.12s; padding: 4px 6px !important;
+      box-sizing: border-box;
     }
     .date-cell:hover { background: #f8fafc; }
     .date-cell.type-REPLACE { background: var(--rep-bg); color: var(--rep-text); font-weight: 700; }
@@ -271,7 +279,7 @@
         🛠️ P3D DO1 설비 부품 교체 / CLEAN 이력 관리 시스템
         <span id="syncStatusBadge" class="sync-badge">💾 로컬 저장 모드</span>
       </h1>
-      <p>PRC Group별 설비 필터링 · 부품명 클릭 시 자동 기록 · 교체주기 D/M/Y 자동 카운트 · GitHub 실시간 연동</p>
+      <p>PRC Group별 설비 필터링 · 부품별 [교체]/[CLEAN] 전용 기록 · 교체주기 D/M/Y 자동 카운트 · GitHub 실시간 연동</p>
     </div>
     <div class="header-actions">
       <button onclick="openManageEqpModal()">⚙️ 설비 / PRC Group 설정</button>
@@ -314,15 +322,9 @@
         <input type="text" id="partSearchInput" placeholder="부품명 검색 (예: SRA, Quad)" oninput="onSearchPartInput(this.value)" style="width:180px;" />
       </div>
 
-      <!-- 우측: 클릭 시 기본 작업 모드 & 필터 -->
+      <!-- 우측: 표시 필터만 깔끔하게 유지 -->
       <div class="toolbar-group">
-        <span style="font-size:12px; font-weight:700; color:#475569;">부품명 클릭 시 자동 기록:</span>
-        <div class="mode-switch">
-          <button class="mode-btn active-rep" id="modeBtnREP" onclick="setWorkMode('REPLACE')">🔧 교체 (REPLACE)</button>
-          <button class="mode-btn" id="modeBtnCLN" onclick="setWorkMode('CLEAN')">✨ 세정 (CLEAN)</button>
-        </div>
-
-        <span style="font-size:12px; font-weight:700; color:#475569; margin-left:8px;">표시 필터:</span>
+        <span style="font-size:12px; font-weight:700; color:#475569;">표시 필터:</span>
         <div class="filter-switch">
           <button class="filter-btn active" id="filterALL" onclick="setFilterMode('ALL')">전체</button>
           <button class="filter-btn" id="filterREP" onclick="setFilterMode('REPLACE')">교체만</button>
@@ -354,7 +356,7 @@
         <span class="legend-dot"><span class="cell-badge CLEAN">CLEAN</span> 세정</span>
         <span class="legend-dot"><span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-size:11px;">🔴 교체기한 초과</span></span>
         <span class="legend-dot"><span style="background:#fefce8; color:#854d0e; padding:2px 6px; border-radius:4px; font-size:11px;">🟡 교체 임박(7일 이내)</span></span>
-        <span>💡 <b>부품명 클릭:</b> 오늘 날짜 자동 입력 | <b>날짜 셀 클릭:</b> 수동 수정/삭제 | <b>EQP ID 클릭:</b> PRC Group 수정</span>
+        <span>💡 <b>기록 방법:</b> 각 부품 우측의 [교체] 또는 [CLEAN] 버튼 클릭 시 오늘 날짜 자동 기록 | <b>날짜 셀 클릭:</b> 수동 수정/삭제 | <b>EQP ID 클릭:</b> PRC Group 수정</span>
       </div>
       <div>
         <button onclick="exportJsonFile()" style="padding:5px 10px; font-size:12px;">📥 JSON 백업 다운로드</button>
@@ -460,7 +462,7 @@
   </div>
 </div>
 
-<!-- 5. 관리 부품 추가 및 삭제 통합 모달 -->
+<!-- 5. 관리 부품 추가 및 삭제 통합 모달 (선택 PRC Group 적용 범위 지원) -->
 <div class="modal-backdrop" id="partModal">
   <div class="modal" style="max-width:520px;">
     <h3>⚙️ 관리 부품 추가 및 삭제 관리</h3>
@@ -483,11 +485,16 @@
         </span>
       </div>
       <div class="form-group">
-        <label>적용 범위</label>
-        <select id="newPartScope">
-          <option value="ALL">전체 설비(EQP ID)에 공통 추가</option>
+        <label>추가 적용 범위</label>
+        <select id="newPartScope" onchange="onNewPartScopeChange(this.value)">
+          <option value="PRC">🏢 선택 PRC Group에 공통 추가</option>
+          <option value="ALL">전체 설비(모든 EQP ID)에 공통 추가</option>
           <option value="CURRENT">현재 선택된 설비에만 추가</option>
         </select>
+      </div>
+      <div class="form-group" id="newPartPrcGroupSelectWrap">
+        <label>대상 PRC Group 선택</label>
+        <select id="newPartTargetPrcSelect"></select>
       </div>
       <div class="modal-footer">
         <button onclick="closeModal('partModal')">취소</button>
@@ -502,10 +509,15 @@
       </p>
       <div class="form-group">
         <label>삭제 적용 범위</label>
-        <select id="delPartScope" onchange="renderDeletePartList()">
+        <select id="delPartScope" onchange="onDelPartScopeChange(this.value)">
+          <option value="PRC">🏢 선택 PRC Group 소속 설비에서만 삭제</option>
           <option value="ALL">전체 설비 및 카탈로그에서 완전히 삭제</option>
           <option value="CURRENT">현재 선택된 설비(<span id="delPartTargetEqpLabel"></span>)에서만 제거</option>
         </select>
+      </div>
+      <div class="form-group" id="delPartPrcGroupSelectWrap">
+        <label>대상 PRC Group 선택</label>
+        <select id="delPartTargetPrcSelect" onchange="renderDeletePartList()"></select>
       </div>
       <div class="form-group">
         <label>삭제할 부품 선택 (목록):</label>
@@ -560,8 +572,8 @@
 <div class="toast" id="toastMsg"></div>
 
 <script>
-  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_P3D_V2';
-  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_P3D_V2';
+  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_P3D_V3';
+  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_P3D_V3';
   const MIN_HISTORY_COLS = 9;
 
   let memoryFallback = {};
@@ -676,7 +688,6 @@
   let selectedPrcFilter = 'ALL';
   let selectedEqp = Object.keys(db.equipments)[0] || 'IAH3701';
   let selectedPart = db.partsCatalog[0] || 'AMU Graphite';
-  let currentWorkMode = 'REPLACE';
   let currentFilterMode = 'ALL';
   let editingContext = null;
   let githubFileSha = null;
@@ -840,13 +851,6 @@
     document.getElementById('partSearchGroup').style.display = tab === 'PART' ? 'flex' : 'none';
     renderSelectors();
     renderMainTable();
-  }
-
-  function setWorkMode(mode) {
-    currentWorkMode = mode;
-    document.getElementById('modeBtnREP').className = 'mode-btn' + (mode === 'REPLACE' ? ' active-rep' : '');
-    document.getElementById('modeBtnCLN').className = 'mode-btn' + (mode === 'CLEAN' ? ' active-cln' : '');
-    showToast(`클릭 시 기본 기록 모드가 [${mode === 'REPLACE' ? '🔧 교체' : '✨ CLEAN'}]으로 변경되었습니다.`);
   }
 
   function setFilterMode(filter) {
@@ -1023,8 +1027,7 @@
             <td class="part-cell">
               <div class="part-cell-inner">
                 <div class="part-info-area">
-                  <div class="part-name-btn" title="클릭 시 오늘 날짜(${getTodayFormatted()}) 자동 기록"
-                       onclick="recordTodayQuick('${escEqp}', '${safePart}', currentWorkMode)">
+                  <div class="part-name-label">
                     <span>${escPart}</span>
                   </div>
                   <span class="cycle-status-badge status-${cycleInfo.status}">${cycleInfo.text}</span>
@@ -1095,15 +1098,16 @@
             <td class="part-cell">
               <div class="part-cell-inner">
                 <div class="part-info-area">
-                  <div class="part-name-btn" title="클릭 시 ${escEqp} 설비에 오늘 날짜 자동 기록"
-                       onclick="recordTodayQuick('${escEqp}', '${safePart}', currentWorkMode)">
+                  <div class="part-name-label">
                     <span>${escEqp} <span style="font-size:11px; font-weight:600; color:#64748b;">[${escapeHtml(prcStr)}]</span></span>
                   </div>
                   <span class="cycle-status-badge status-${cycleInfo.status}">${cycleInfo.text}</span>
                 </div>
                 <div class="quick-actions">
-                  <button type="button" class="q-btn rep" onclick="recordTodayQuick('${escEqp}', '${safePart}', 'REPLACE')">교체</button>
-                  <button type="button" class="q-btn cln" onclick="recordTodayQuick('${escEqp}', '${safePart}', 'CLEAN')">CLEAN</button>
+                  <button type="button" class="q-btn rep" title="오늘 날짜로 [교체] 즉시 기록"
+                          onclick="recordTodayQuick('${escEqp}', '${safePart}', 'REPLACE')">교체</button>
+                  <button type="button" class="q-btn cln" title="오늘 날짜로 [CLEAN] 즉시 기록"
+                          onclick="recordTodayQuick('${escEqp}', '${safePart}', 'CLEAN')">CLEAN</button>
                 </div>
               </div>
             </td>
@@ -1146,7 +1150,7 @@
     document.getElementById('editModalSub').textContent = `설비: ${eqpId} (${db.equipments[eqpId].prcGroup || ''}) | 부품: ${partName}`;
     document.getElementById('btnDeleteRecord').style.display = isNew ? 'none' : 'inline-flex';
 
-    const record = isNew ? { date: getTodayFormatted(), type: currentWorkMode, note: '' } : list[recordIndex];
+    const record = isNew ? { date: getTodayFormatted(), type: 'REPLACE', note: '' } : list[recordIndex];
     document.getElementById('editWorkType').value = record.type || 'REPLACE';
     document.getElementById('editDateText').value = record.date || getTodayFormatted();
     document.getElementById('editDatePicker').value = yyMmDdToIso(record.date || getTodayFormatted());
@@ -1295,13 +1299,39 @@
     saveAndSync(`[${eqpId}] 설비가 삭제되었습니다.`);
   }
 
-  // 3. 관리 부품 추가/삭제 모달 로직
+  // 3. 관리 부품 추가/삭제 모달 로직 (선택 PRC Group 적용 지원)
   function openPartModal() {
     document.getElementById('newPartNameInput').value = '';
     document.getElementById('newPartCycleInput').value = '';
+
+    // PRC Group 선택 목록 채우기
+    const prcs = getAllPrcGroups();
+    const curPrc = (db.equipments[selectedEqp] && db.equipments[selectedEqp].prcGroup) ? db.equipments[selectedEqp].prcGroup : prcs[0];
+
+    const prcOptHtml = prcs.map(p =>
+      `<option value="${escapeHtml(p)}" ${p === curPrc ? 'selected' : ''}>[${escapeHtml(p)}] Group</option>`
+    ).join('');
+
+    document.getElementById('newPartTargetPrcSelect').innerHTML = prcOptHtml;
+    document.getElementById('delPartTargetPrcSelect').innerHTML = prcOptHtml;
+
+    document.getElementById('newPartScope').value = 'PRC';
+    document.getElementById('delPartScope').value = 'PRC';
+    onNewPartScopeChange('PRC');
+    onDelPartScopeChange('PRC');
+
     switchPartManageSubTab('ADD');
     document.getElementById('partModal').classList.add('show');
     setTimeout(() => document.getElementById('newPartNameInput').focus(), 50);
+  }
+
+  function onNewPartScopeChange(scope) {
+    document.getElementById('newPartPrcGroupSelectWrap').style.display = (scope === 'PRC') ? 'block' : 'none';
+  }
+
+  function onDelPartScopeChange(scope) {
+    document.getElementById('delPartPrcGroupSelectWrap').style.display = (scope === 'PRC') ? 'block' : 'none';
+    renderDeletePartList();
   }
 
   function switchPartManageSubTab(subTab) {
@@ -1321,6 +1351,7 @@
     const partName = document.getElementById('newPartNameInput').value.trim();
     const cycleInput = document.getElementById('newPartCycleInput').value.trim().toUpperCase();
     const scope = document.getElementById('newPartScope').value;
+    const targetPrc = document.getElementById('newPartTargetPrcSelect').value;
 
     if (!partName) return alert('부품명을 입력해주세요.');
 
@@ -1339,41 +1370,71 @@
       db.partCycles[partName] = cycleInput;
     }
 
+    let successMsg = '';
+
     if (scope === 'ALL') {
+      // 1. 전체 설비 공통 추가
       Object.keys(db.equipments).forEach(eqpId => {
         const eqp = db.equipments[eqpId];
         if (!eqp.parts.includes(partName)) eqp.parts.push(partName);
         if (!eqp.history[partName]) eqp.history[partName] = [];
       });
+      successMsg = `부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) [전체 설비]에 공통 추가되었습니다.`;
+
+    } else if (scope === 'PRC') {
+      // 2. 선택 PRC Group 소속 설비들에만 공통 추가
+      let count = 0;
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if ((eqp.prcGroup || '기타') === targetPrc) {
+          if (!eqp.parts.includes(partName)) eqp.parts.push(partName);
+          if (!eqp.history[partName]) eqp.history[partName] = [];
+          count++;
+        }
+      });
+      successMsg = `부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) [${targetPrc}] Group 소속 설비(${count}대)에 공통 추가되었습니다.`;
+
     } else {
+      // 3. 현재 선택된 설비에만 추가
       const eqp = db.equipments[selectedEqp];
       if (eqp) {
         if (!eqp.parts.includes(partName)) eqp.parts.push(partName);
         if (!eqp.history[partName]) eqp.history[partName] = [];
       }
+      successMsg = `부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) [${selectedEqp}] 설비에 추가되었습니다.`;
     }
 
     selectedPart = partName;
     closeModal('partModal');
     renderSelectors();
-    saveAndSync(`부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) 추가되었습니다.`);
+    saveAndSync(successMsg);
   }
 
-  // 삭제 목록 렌더링
+  // 삭제 목록 렌더링 (PRC Group 범위 지원)
   function renderDeletePartList() {
     const scope = document.getElementById('delPartScope').value;
+    const targetPrc = document.getElementById('delPartTargetPrcSelect').value;
     const container = document.getElementById('deletePartListContainer');
 
     let partList = [];
     if (scope === 'ALL') {
       partList = [...db.partsCatalog];
+    } else if (scope === 'PRC') {
+      const set = new Set();
+      Object.keys(db.equipments).forEach(id => {
+        const eqp = db.equipments[id];
+        if ((eqp.prcGroup || '기타') === targetPrc && eqp.parts) {
+          eqp.parts.forEach(p => set.add(p));
+        }
+      });
+      partList = Array.from(set);
     } else {
       const eqp = db.equipments[selectedEqp];
       partList = (eqp && eqp.parts) ? [...eqp.parts] : [];
     }
 
     if (partList.length === 0) {
-      container.innerHTML = '<div style="color:#94a3b8; font-size:12px; padding:10px; text-align:center;">등록된 부품이 없습니다.</div>';
+      container.innerHTML = '<div style="color:#94a3b8; font-size:12px; padding:10px; text-align:center;">해당 범위에 등록된 부품이 없습니다.</div>';
       return;
     }
 
@@ -1391,19 +1452,27 @@
 
   // 부품 삭제 실행
   function executeDeletePart(partName, scope) {
-    const scopeLabel = (scope === 'ALL') ? '전체 설비 및 카탈로그' : `[${selectedEqp}] 설비`;
+    const targetPrc = document.getElementById('delPartTargetPrcSelect').value;
+    let scopeLabel = '';
+
+    if (scope === 'ALL') {
+      scopeLabel = '전체 설비 및 카탈로그';
+    } else if (scope === 'PRC') {
+      scopeLabel = `[${targetPrc}] Group 소속 설비 전체`;
+    } else {
+      scopeLabel = `[${selectedEqp}] 설비`;
+    }
+
     if (!confirm(`정말로 ${scopeLabel}에서 '${partName}' 부품을 삭제하시겠습니까?
-이 부품에 기록된 모든 교체 이력이 영구히 삭제됩니다.`)) {
+해당 설비들에 기록된 교체/CLEAN 이력이 함께 삭제됩니다.`)) {
       return;
     }
 
     if (scope === 'ALL') {
-      // 1. 카탈로그에서 제거
       db.partsCatalog = db.partsCatalog.filter(p => p !== partName);
       if (db.partCycles && db.partCycles[partName]) {
         delete db.partCycles[partName];
       }
-      // 2. 모든 설비에서 해당 부품 및 이력 제거
       Object.keys(db.equipments).forEach(eqpId => {
         const eqp = db.equipments[eqpId];
         if (eqp.parts) {
@@ -1413,8 +1482,28 @@
           delete eqp.history[partName];
         }
       });
+
+    } else if (scope === 'PRC') {
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if ((eqp.prcGroup || '기타') === targetPrc) {
+          if (eqp.parts) {
+            eqp.parts = eqp.parts.filter(p => p !== partName);
+          }
+          if (eqp.history && eqp.history[partName]) {
+            delete eqp.history[partName];
+          }
+        }
+      });
+
+      // 만약 전체 설비 중 이 부품을 쓰는 설비가 하나도 남지 않았다면 카탈로그에서도 자동 정리
+      const isUsedElsewhere = Object.values(db.equipments).some(eq => eq.parts && eq.parts.includes(partName));
+      if (!isUsedElsewhere) {
+        db.partsCatalog = db.partsCatalog.filter(p => p !== partName);
+      }
+
     } else {
-      // 현재 선택된 설비에서만 제거
+      // 현재 선택 설비만 제거
       const eqp = db.equipments[selectedEqp];
       if (eqp) {
         if (eqp.parts) {
@@ -1423,6 +1512,10 @@
         if (eqp.history && eqp.history[partName]) {
           delete eqp.history[partName];
         }
+      }
+      const isUsedElsewhere = Object.values(db.equipments).some(eq => eq.parts && eq.parts.includes(partName));
+      if (!isUsedElsewhere) {
+        db.partsCatalog = db.partsCatalog.filter(p => p !== partName);
       }
     }
 
