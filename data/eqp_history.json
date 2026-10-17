@@ -1,1 +1,209 @@
-{}
+{
+  "updatedAt": "2026-10-17T13:25:29.103Z",
+  "partsCatalog": [
+    "AMU Graphite",
+    "SRA",
+    "Beam Stoppper",
+    "Stopper Housing",
+    "Quad Tube",
+    "Scanner"
+  ],
+  "partCycles": {
+    "AMU Graphite": "6M",
+    "SRA": "3M",
+    "Beam Stoppper": "6M",
+    "Stopper Housing": "3M",
+    "Quad Tube": "6M",
+    "Scanner": "1Y"
+  },
+  "equipments": {
+    "IAH3701": {
+      "prcGroup": "HC_Carbon_PH",
+      "parts": [
+        "AMU Graphite",
+        "SRA",
+        "Beam Stoppper",
+        "Stopper Housing",
+        "Quad Tube",
+        "Scanner"
+      ],
+      "history": {
+        "AMU Graphite": [
+          {
+            "date": "26.10.13",
+            "type": "REPLACE",
+            "note": "정기 교체"
+          },
+          {
+            "date": "26.10.17",
+            "type": "REPLACE",
+            "note": ""
+          },
+          {
+            "date": "26.10.17",
+            "type": "CLEAN",
+            "note": ""
+          }
+        ],
+        "SRA": [
+          {
+            "date": "26.04.17",
+            "type": "REPLACE",
+            "note": ""
+          },
+          {
+            "date": "26.10.17",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Beam Stoppper": [
+          {
+            "date": "26.04.17",
+            "type": "REPLACE",
+            "note": ""
+          },
+          {
+            "date": "26.10.17",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Stopper Housing": [
+          {
+            "date": "26.04.17",
+            "type": "CLEAN",
+            "note": "세정 후 재장착"
+          },
+          {
+            "date": "26.10.17",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Quad Tube": [
+          {
+            "date": "26.08.17",
+            "type": "CLEAN",
+            "note": "내부 크리닝"
+          },
+          {
+            "date": "26.10.17",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Scanner": [
+          {
+            "date": "25.10.17",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ]
+      }
+    },
+    "IAH3702": {
+      "prcGroup": "HC_Carbon_PH",
+      "parts": [
+        "AMU Graphite",
+        "SRA",
+        "Beam Stoppper",
+        "Stopper Housing",
+        "Quad Tube",
+        "Scanner"
+      ],
+      "history": {
+        "AMU Graphite": [
+          {
+            "date": "26.08.12",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "SRA": [
+          {
+            "date": "26.05.20",
+            "type": "CLEAN",
+            "note": ""
+          },
+          {
+            "date": "26.09.15",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Beam Stoppper": [
+          {
+            "date": "26.06.01",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Stopper Housing": [
+          {
+            "date": "26.06.01",
+            "type": "CLEAN",
+            "note": ""
+          }
+        ],
+        "Quad Tube": [
+          {
+            "date": "26.07.19",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Scanner": [
+          {
+            "date": "26.01.10",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ]
+      }
+    },
+    "IAH3703": {
+      "prcGroup": "LE",
+      "parts": [
+        "AMU Graphite",
+        "SRA",
+        "Beam Stoppper",
+        "Stopper Housing",
+        "Quad Tube",
+        "Scanner"
+      ],
+      "history": {
+        "AMU Graphite": [
+          {
+            "date": "26.09.03",
+            "type": "CLEAN",
+            "note": ""
+          }
+        ],
+        "SRA": [
+          {
+            "date": "26.03.11",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Beam Stoppper": [],
+        "Stopper Housing": [],
+        "Quad Tube": [
+          {
+            "date": "26.09.28",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ],
+        "Scanner": [
+          {
+            "date": "26.04.05",
+            "type": "REPLACE",
+            "note": ""
+          }
+        ]
+      }
+    }
+  }
+}
