@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>설비 부품 교체/CLEAN 이력 관리 시스템</title>
+  <title>P3D DO1 설비 부품 교체/CLEAN 이력 관리 시스템</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -34,7 +34,7 @@
     }
     * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; background: var(--bg); color: var(--text); padding: 20px; }
-    .container { max-width: 1500px; margin: 0 auto; }
+    .container { max-width: 1550px; margin: 0 auto; }
 
     /* Header */
     .header {
@@ -97,7 +97,7 @@
       flex-wrap: wrap; gap: 14px;
     }
     .toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .chip-list { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .chip-list { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
     .chip {
       padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
       border: 1px solid var(--border); background: #f8fafc; cursor: pointer;
@@ -141,9 +141,14 @@
     table.history-table thead th {
       background: #f8fafc; font-weight: 700; color: #0f172a; height: 40px;
     }
+    .prc-badge-tag {
+      display: inline-block; font-size: 10px; font-weight: 800; background: #f1f5f9;
+      color: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;
+      margin-bottom: 3px;
+    }
     .eqp-id-cell {
-      font-weight: 800; font-size: 16px; width: 120px; background: #ffffff;
-      vertical-align: middle; letter-spacing: 0.3px;
+      font-weight: 800; font-size: 15px; width: 140px; background: #ffffff;
+      vertical-align: middle; letter-spacing: 0.3px; padding: 6px 4px !important;
     }
     .part-cell {
       width: 320px; background: #ffffff; padding: 0 10px !important; text-align: left;
@@ -240,12 +245,13 @@
   <div class="header">
     <div class="header-title">
       <h1>
-        🛠️ 설비 부품 교체 / CLEAN 이력 관리 시스템
+        🛠️ P3D DO1 설비 부품 교체 / CLEAN 이력 관리 시스템
         <span id="syncStatusBadge" class="sync-badge">💾 로컬 저장 모드</span>
       </h1>
-      <p>부품명 클릭 시 오늘 날짜 자동 입력 · 교체주기 D/M/Y 자동 카운트 및 잔여일수 알림 · GitHub 서버 연동 지원</p>
+      <p>PRC Group별 설비 필터링 · 부품명 클릭 시 자동 기록 · 교체주기 D/M/Y 자동 카운트 · GitHub 실시간 연동</p>
     </div>
     <div class="header-actions">
+      <button onclick="openManageEqpModal()">⚙️ 설비 / PRC Group 설정</button>
       <button onclick="openEqpModal()">➕ EQP ID 추가</button>
       <button onclick="openPartModal()">➕ 관리 부품 추가</button>
       <button onclick="pullFromGitHub(true)" id="btnRefreshGithub" style="display:none;">🔄 서버 새로고침</button>
@@ -259,29 +265,35 @@
       📋 1. 설비별(EQP ID) 부품 교체/CLEAN 이력 조회 및 기록
     </button>
     <button class="tab-btn" id="tabBtnPart" onclick="switchTab('PART')">
-      🔍 2. 부품별 전체 설비(EQP ID) 이력 비교 조회
+      🔍 2. 부품별 전체 설비(EQP ID) 이력 조회 및 기록
     </button>
   </div>
 
   <!-- 컨트롤 패널 -->
   <div class="panel">
     <div class="toolbar">
-      <!-- 좌측: 설비 또는 부품 조회 -->
+      <!-- 좌측: PRC Group 필터 및 설비/부품 조회 -->
       <div class="toolbar-group" id="eqpSearchGroup">
-        <label style="font-size:13px; font-weight:800;">설비(EQP ID) 조회:</label>
-        <select id="eqpSelect" onchange="onSelectEqp(this.value)" style="min-width:150px; font-weight:700;"></select>
-        <input type="text" id="eqpSearchInput" placeholder="EQP ID 검색 (예: IAH3701)" oninput="onSearchEqpInput(this.value)" style="width:180px;" />
+        <label style="font-size:13px; font-weight:800; color:#1e293b;">🏢 PRC Group:</label>
+        <select id="prcFilterSelect" onchange="onSelectPrcFilter(this.value)" style="min-width:140px; font-weight:700; background:#f1f5f9;"></select>
+
+        <label style="font-size:13px; font-weight:800; margin-left:6px;">설비(EQP ID):</label>
+        <select id="eqpSelect" onchange="onSelectEqp(this.value)" style="min-width:140px; font-weight:700;"></select>
+        <input type="text" id="eqpSearchInput" placeholder="EQP ID 검색 (예: IAH3701)" oninput="onSearchEqpInput(this.value)" style="width:160px;" />
       </div>
 
       <div class="toolbar-group" id="partSearchGroup" style="display:none;">
-        <label style="font-size:13px; font-weight:800;">부품명 조회:</label>
-        <select id="partSelect" onchange="onSelectPart(this.value)" style="min-width:200px; font-weight:700;"></select>
-        <input type="text" id="partSearchInput" placeholder="부품명 검색 (예: SRA, Quad)" oninput="onSearchPartInput(this.value)" style="width:200px;" />
+        <label style="font-size:13px; font-weight:800; color:#1e293b;">🏢 PRC Group 필터:</label>
+        <select id="prcFilterSelectPartTab" onchange="onSelectPrcFilterPartTab(this.value)" style="min-width:140px; font-weight:700; background:#f1f5f9;"></select>
+
+        <label style="font-size:13px; font-weight:800; margin-left:6px;">부품명 조회:</label>
+        <select id="partSelect" onchange="onSelectPart(this.value)" style="min-width:190px; font-weight:700;"></select>
+        <input type="text" id="partSearchInput" placeholder="부품명 검색 (예: SRA, Quad)" oninput="onSearchPartInput(this.value)" style="width:180px;" />
       </div>
 
       <!-- 우측: 클릭 시 기본 작업 모드 & 필터 -->
       <div class="toolbar-group">
-        <span style="font-size:12px; font-weight:700; color:#475569;">부품명 클릭 시 자동 기록 모드:</span>
+        <span style="font-size:12px; font-weight:700; color:#475569;">부품명 클릭 시 자동 기록:</span>
         <div class="mode-switch">
           <button class="mode-btn active-rep" id="modeBtnREP" onclick="setWorkMode('REPLACE')">🔧 교체 (REPLACE)</button>
           <button class="mode-btn" id="modeBtnCLN" onclick="setWorkMode('CLEAN')">✨ 세정 (CLEAN)</button>
@@ -305,7 +317,7 @@
     <table class="history-table">
       <thead>
         <tr>
-          <th id="thCol1" style="width:120px;">EQP ID</th>
+          <th id="thCol1" style="width:140px;">EQP ID (PRC)</th>
           <th id="thCol2" style="width:320px;">부품 (교체주기 및 잔여일수)</th>
           <th id="thHistory" colspan="9">교체이력</th>
         </tr>
@@ -319,7 +331,7 @@
         <span class="legend-dot"><span class="cell-badge CLEAN">CLEAN</span> 세정</span>
         <span class="legend-dot"><span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-size:11px;">🔴 교체기한 초과</span></span>
         <span class="legend-dot"><span style="background:#fefce8; color:#854d0e; padding:2px 6px; border-radius:4px; font-size:11px;">🟡 교체 임박(7일 이내)</span></span>
-        <span>💡 <b>부품명 클릭:</b> 오늘 날짜 자동 입력 | <b>날짜 셀 클릭:</b> 수동 수정/삭제</span>
+        <span>💡 <b>부품명 클릭:</b> 오늘 날짜 자동 입력 | <b>날짜 셀 클릭:</b> 수동 수정/삭제 | <b>EQP ID 클릭:</b> PRC Group 수정</span>
       </div>
       <div>
         <button onclick="exportJsonFile()" style="padding:5px 10px; font-size:12px;">📥 JSON 백업 다운로드</button>
@@ -373,11 +385,20 @@
   </div>
 </div>
 
-<!-- 3. EQP ID 추가 모달 -->
+<!-- 3. EQP ID 추가 모달 (PRC Group 지정 지원) -->
 <div class="modal-backdrop" id="eqpModal">
   <div class="modal">
     <h3>➕ 신규 설비 (EQP ID) 추가</h3>
-    <p>새로운 설비 ID를 등록하면 기본 관리 부품 목록이 자동으로 연결됩니다.</p>
+    <p>설비 ID와 소속될 PRC Group을 지정하여 등록합니다.</p>
+    <div class="form-group">
+      <label>PRC Group 선택 또는 신규 직접 입력</label>
+      <div style="display:flex; gap:8px; margin-bottom:6px;">
+        <select id="newEqpPrcSelect" onchange="onSelectExistingPrc(this.value)" style="width:50%;">
+          <option value="">-- 기존 PRC 선택 --</option>
+        </select>
+        <input type="text" id="newEqpPrcInput" placeholder="신규 PRC 입력 (예: HC_Carbon_PH)" style="width:50%;" />
+      </div>
+    </div>
     <div class="form-group">
       <label>EQP ID 입력</label>
       <input type="text" id="newEqpIdInput" placeholder="예: IAH3704" onkeydown="if(event.key==='Enter') addEqpId()" />
@@ -389,7 +410,34 @@
   </div>
 </div>
 
-<!-- 4. 부품명 추가 모달 (교체주기 D/M/Y 지원) -->
+<!-- 4. 설비별 PRC Group 수정 및 관리 모달 -->
+<div class="modal-backdrop" id="manageEqpModal">
+  <div class="modal" style="max-width:520px;">
+    <h3>⚙️ 설비별 PRC Group 수정 및 관리</h3>
+    <p>각 설비의 소속 PRC Group을 변경하거나 수정할 수 있습니다.</p>
+    <div class="form-group">
+      <label>대상 설비 선택</label>
+      <select id="manageTargetEqp" onchange="onManageTargetEqpChange(this.value)"></select>
+    </div>
+    <div class="form-group">
+      <label>현재 소속 PRC Group 변경</label>
+      <input type="text" id="manageTargetPrcInput" placeholder="예: HC_Carbon_PH 또는 LE" />
+    </div>
+    <div class="form-group" style="max-height:160px; overflow-y:auto; border:1px solid #e2e8f0; padding:8px; border-radius:8px; background:#f8fafc;">
+      <label style="margin-bottom:4px;">현재 등록된 전체 설비 목록:</label>
+      <div id="manageEqpListSummary" style="font-size:12px; line-height:1.8; color:#334155;"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" onclick="deleteSelectedEqp()">🗑️ 설비 삭제</button>
+      <div style="display:flex; gap:6px;">
+        <button onclick="closeModal('manageEqpModal')">취소</button>
+        <button class="btn-primary" onclick="saveEqpPrcChange()">PRC Group 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 부품명 추가 모달 (교체주기 D/M/Y 지원) -->
 <div class="modal-backdrop" id="partModal">
   <div class="modal">
     <h3>➕ 관리 부품 및 교체주기 추가</h3>
@@ -419,7 +467,7 @@
   </div>
 </div>
 
-<!-- 5. GitHub 서버 연동 모달 -->
+<!-- 6. GitHub 서버 연동 모달 -->
 <div class="modal-backdrop" id="githubModal">
   <div class="modal" style="max-width:520px;">
     <h3>☁️ GitHub 서버 데이터 공유 설정</h3>
@@ -461,8 +509,8 @@
 <div class="toast" id="toastMsg"></div>
 
 <script>
-  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_V5';
-  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_V5';
+  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_P3D_V1';
+  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_P3D_V1';
   const MIN_HISTORY_COLS = 9;
 
   let memoryFallback = {};
@@ -477,6 +525,7 @@
     }
   };
 
+  // 요청하신 PRC Group(HC_Carbon_PH, LE) 및 교체주기 기본 반영
   const DEFAULT_DB = {
     updatedAt: new Date().toISOString(),
     partsCatalog: [
@@ -497,6 +546,7 @@
     },
     equipments: {
       "IAH3701": {
+        prcGroup: "HC_Carbon_PH",
         parts: [
           "AMU Graphite",
           "SRA",
@@ -531,6 +581,7 @@
         }
       },
       "IAH3702": {
+        prcGroup: "HC_Carbon_PH",
         parts: [
           "AMU Graphite",
           "SRA",
@@ -549,6 +600,7 @@
         }
       },
       "IAH3703": {
+        prcGroup: "LE",
         parts: [
           "AMU Graphite",
           "SRA",
@@ -571,6 +623,7 @@
 
   let db = loadLocalDb();
   let currentTab = 'EQP';
+  let selectedPrcFilter = 'ALL'; // 'ALL' or specific PRC Group
   let selectedEqp = Object.keys(db.equipments)[0] || 'IAH3701';
   let selectedPart = db.partsCatalog[0] || 'AMU Graphite';
   let currentWorkMode = 'REPLACE';
@@ -668,6 +721,20 @@
     list.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   }
 
+  function getAllPrcGroups() {
+    const set = new Set();
+    Object.values(db.equipments).forEach(eq => {
+      if (eq.prcGroup && eq.prcGroup.trim()) set.add(eq.prcGroup.trim());
+    });
+    return Array.from(set).sort();
+  }
+
+  function getFilteredEqpList(prcFilter) {
+    const allEqps = Object.keys(db.equipments);
+    if (!prcFilter || prcFilter === 'ALL') return allEqps;
+    return allEqps.filter(id => (db.equipments[id].prcGroup || '기타') === prcFilter);
+  }
+
   function loadLocalDb() {
     try {
       const raw = SafeStorage.getItem(STORAGE_KEY);
@@ -675,6 +742,12 @@
         const parsed = JSON.parse(raw);
         if (parsed && parsed.equipments) {
           if (!parsed.partCycles) parsed.partCycles = {};
+          // 이전 데이터 호환성 (prcGroup 누락 시 기본값 지정)
+          Object.keys(parsed.equipments).forEach(k => {
+            if (!parsed.equipments[k].prcGroup) {
+              parsed.equipments[k].prcGroup = (k === 'IAH3703') ? 'LE' : 'HC_Carbon_PH';
+            }
+          });
           return parsed;
         }
       }
@@ -735,30 +808,63 @@
     renderMainTable();
   }
 
+  // PRC Group 필터 변경
+  function onSelectPrcFilter(prc) {
+    selectedPrcFilter = prc;
+    document.getElementById('prcFilterSelectPartTab').value = prc;
+    const filteredEqps = getFilteredEqpList(selectedPrcFilter);
+    if (!filteredEqps.includes(selectedEqp)) {
+      selectedEqp = filteredEqps[0] || '';
+    }
+    renderSelectors();
+    renderMainTable();
+  }
+
+  function onSelectPrcFilterPartTab(prc) {
+    selectedPrcFilter = prc;
+    document.getElementById('prcFilterSelect').value = prc;
+    renderSelectors();
+    renderMainTable();
+  }
+
   function renderSelectors() {
-    const eqpIds = Object.keys(db.equipments);
-    if (!eqpIds.includes(selectedEqp)) selectedEqp = eqpIds[0] || '';
+    const prcGroups = getAllPrcGroups();
+
+    // 1. PRC Group 셀렉터 렌더링
+    const prcOptions = `<option value="ALL">전체 PRC Group</option>` +
+      prcGroups.map(p => `<option value="${escapeHtml(p)}" ${p === selectedPrcFilter ? 'selected' : ''}>[${escapeHtml(p)}] Group</option>`).join('');
+    
+    document.getElementById('prcFilterSelect').innerHTML = prcOptions;
+    document.getElementById('prcFilterSelectPartTab').innerHTML = prcOptions;
+
+    // 2. 현재 선택된 PRC Group에 속한 EQP ID 목록 필터링
+    const filteredEqps = getFilteredEqpList(selectedPrcFilter);
+    if (!filteredEqps.includes(selectedEqp)) selectedEqp = filteredEqps[0] || Object.keys(db.equipments)[0] || '';
     if (!db.partsCatalog.includes(selectedPart)) selectedPart = db.partsCatalog[0] || '';
 
     const eqpSelect = document.getElementById('eqpSelect');
-    eqpSelect.innerHTML = eqpIds.map(id =>
-      `<option value="${escapeHtml(id)}" ${id === selectedEqp ? 'selected' : ''}>${escapeHtml(id)}</option>`
-    ).join('');
+    eqpSelect.innerHTML = filteredEqps.map(id => {
+      const prc = db.equipments[id].prcGroup || '미지정';
+      return `<option value="${escapeHtml(id)}" ${id === selectedEqp ? 'selected' : ''}>${escapeHtml(id)} (${escapeHtml(prc)})</option>`;
+    }).join('');
 
     const partSelect = document.getElementById('partSelect');
     partSelect.innerHTML = db.partsCatalog.map(p =>
       `<option value="${escapeHtml(p)}" ${p === selectedPart ? 'selected' : ''}>${escapeHtml(p)}</option>`
     ).join('');
 
+    // 3. 빠른 칩 렌더링
     const chipContainer = document.getElementById('quickChips');
     if (currentTab === 'EQP') {
-      chipContainer.innerHTML = eqpIds.map(id =>
-        `<span class="chip ${id === selectedEqp ? 'active' : ''}" onclick="onSelectEqp('${escapeHtml(id)}')">${escapeHtml(id)}</span>`
-      ).join('');
+      chipContainer.innerHTML = `<span style="font-size:12px; font-weight:700; color:#64748b; margin-right:4px;">설비 바로가기:</span>` +
+        filteredEqps.map(id =>
+          `<span class="chip ${id === selectedEqp ? 'active' : ''}" onclick="onSelectEqp('${escapeHtml(id)}')">${escapeHtml(id)}</span>`
+        ).join('');
     } else {
-      chipContainer.innerHTML = db.partsCatalog.map(p =>
-        `<span class="chip ${p === selectedPart ? 'active' : ''}" onclick="onSelectPart('${escapeHtml(p).replace(/'/g, "\'")}')">${escapeHtml(p)}</span>`
-      ).join('');
+      chipContainer.innerHTML = `<span style="font-size:12px; font-weight:700; color:#64748b; margin-right:4px;">부품 바로가기:</span>` +
+        db.partsCatalog.map(p =>
+          `<span class="chip ${p === selectedPart ? 'active' : ''}" onclick="onSelectPart('${escapeHtml(p).replace(/'/g, "\'")}')">${escapeHtml(p)}</span>`
+        ).join('');
     }
   }
 
@@ -774,6 +880,11 @@
     const match = Object.keys(db.equipments).find(id => id.toUpperCase().includes(q));
     if (match) {
       selectedEqp = match;
+      // 검색된 설비의 PRC Group으로 필터 자동 동기화
+      const matchedPrc = db.equipments[match].prcGroup;
+      if (selectedPrcFilter !== 'ALL' && selectedPrcFilter !== matchedPrc) {
+        selectedPrcFilter = 'ALL';
+      }
       renderSelectors();
       renderMainTable();
     }
@@ -813,11 +924,11 @@
     const thHistory = document.getElementById('thHistory');
 
     if (currentTab === 'EQP') {
-      thCol1.textContent = 'EQP ID';
+      thCol1.textContent = 'EQP ID (PRC)';
       thCol2.textContent = '부품 (교체주기 및 잔여일수)';
       const eqpObj = db.equipments[selectedEqp];
       if (!eqpObj) {
-        tbody.innerHTML = `<tr><td colspan="11">설비 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;">선택된 PRC Group에 해당하는 설비가 없습니다.</td></tr>`;
         return;
       }
 
@@ -829,6 +940,7 @@
       });
       thHistory.setAttribute('colspan', maxHistoryLen);
 
+      const prcGroupStr = eqpObj.prcGroup || '미지정';
       let rowsHtml = '';
       parts.forEach((partName, idx) => {
         const filteredRecords = getFilteredHistory(selectedEqp, partName);
@@ -858,7 +970,11 @@
 
         rowsHtml += `
           <tr>
-            ${idx === 0 ? `<td class="eqp-id-cell" rowspan="${parts.length}">${escEqp}</td>` : ''}
+            ${idx === 0 ? `
+              <td class="eqp-id-cell" rowspan="${parts.length}">
+                <span class="prc-badge-tag">${escapeHtml(prcGroupStr)}</span><br/>
+                <span style="cursor:pointer;" title="클릭하여 PRC Group 수정" onclick="openManageEqpModal('${escEqp}')">${escEqp}</span>
+              </td>` : ''}
             <td class="part-cell">
               <div class="part-cell-inner">
                 <div class="part-info-area">
@@ -883,12 +999,18 @@
       tbody.innerHTML = rowsHtml;
 
     } else {
+      // 2. 부품별 전체 설비 조회 탭 (PRC Group 필터 적용)
       thCol1.textContent = '부품명';
-      thCol2.textContent = 'EQP ID (교체주기 및 잔여일수)';
-      const eqpIds = Object.keys(db.equipments);
-      let maxHistoryLen = MIN_HISTORY_COLS;
+      thCol2.textContent = 'EQP ID (PRC / 주기 잔여일수)';
+      
+      const targetEqpIds = getFilteredEqpList(selectedPrcFilter);
+      if (targetEqpIds.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="padding:30px;">선택된 PRC Group에 속한 설비가 없습니다.</td></tr>`;
+        return;
+      }
 
-      eqpIds.forEach(eqpId => {
+      let maxHistoryLen = MIN_HISTORY_COLS;
+      targetEqpIds.forEach(eqpId => {
         const list = getFilteredHistory(eqpId, selectedPart);
         if (list.length + 1 > maxHistoryLen) maxHistoryLen = list.length + 1;
       });
@@ -898,9 +1020,10 @@
       const safePart = selectedPart.replace(/'/g, "\'");
       let rowsHtml = '';
 
-      eqpIds.forEach((eqpId, idx) => {
+      targetEqpIds.forEach((eqpId, idx) => {
         const filteredRecords = getFilteredHistory(eqpId, selectedPart);
         const escEqp = escapeHtml(eqpId);
+        const prcStr = db.equipments[eqpId].prcGroup || '미지정';
         const cycleInfo = getPartCycleStatus(eqpId, selectedPart);
 
         let cellsHtml = '';
@@ -923,13 +1046,13 @@
 
         rowsHtml += `
           <tr>
-            ${idx === 0 ? `<td class="eqp-id-cell" rowspan="${eqpIds.length}">${escPart}</td>` : ''}
+            ${idx === 0 ? `<td class="eqp-id-cell" rowspan="${targetEqpIds.length}">${escPart}</td>` : ''}
             <td class="part-cell">
               <div class="part-cell-inner">
                 <div class="part-info-area">
                   <div class="part-name-btn" title="클릭 시 ${escEqp} 설비에 오늘 날짜 자동 기록"
                        onclick="recordTodayQuick('${escEqp}', '${safePart}', currentWorkMode)">
-                    <span>${escEqp}</span>
+                    <span>${escEqp} <span style="font-size:11px; font-weight:600; color:#64748b;">[${escapeHtml(prcStr)}]</span></span>
                   </div>
                   <span class="cycle-status-badge status-${cycleInfo.status}">${cycleInfo.text}</span>
                 </div>
@@ -975,7 +1098,7 @@
     const isNew = recordIndex === -1 || !list[recordIndex];
 
     document.getElementById('editModalTitle').textContent = isNew ? '➕ 이력 날짜 수동 추가' : '📅 이력 날짜 및 작업 구분 수정';
-    document.getElementById('editModalSub').textContent = `설비: ${eqpId} | 부품: ${partName}`;
+    document.getElementById('editModalSub').textContent = `설비: ${eqpId} (${db.equipments[eqpId].prcGroup || ''}) | 부품: ${partName}`;
     document.getElementById('btnDeleteRecord').style.display = isNew ? 'none' : 'inline-flex';
 
     const record = isNew ? { date: getTodayFormatted(), type: currentWorkMode, note: '' } : list[recordIndex];
@@ -1031,14 +1154,31 @@
     }
   }
 
+  // 1. EQP ID 추가 모달
   function openEqpModal() {
     document.getElementById('newEqpIdInput').value = '';
+    document.getElementById('newEqpPrcInput').value = '';
+    
+    // 기존 PRC Group 옵션 채우기
+    const prcs = getAllPrcGroups();
+    const prcSelect = document.getElementById('newEqpPrcSelect');
+    prcSelect.innerHTML = `<option value="">-- 기존 PRC 선택 --</option>` +
+      prcs.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+
     document.getElementById('eqpModal').classList.add('show');
     setTimeout(() => document.getElementById('newEqpIdInput').focus(), 50);
   }
 
+  function onSelectExistingPrc(val) {
+    if (val) document.getElementById('newEqpPrcInput').value = val;
+  }
+
   function addEqpId() {
     const newId = document.getElementById('newEqpIdInput').value.trim().toUpperCase();
+    let prcVal = document.getElementById('newEqpPrcInput').value.trim();
+    if (!prcVal) prcVal = document.getElementById('newEqpPrcSelect').value;
+    if (!prcVal) prcVal = 'HC_Carbon_PH'; // 미입력 시 기본값
+
     if (!newId) return alert('EQP ID를 입력해주세요.');
     if (db.equipments[newId]) return alert('이미 등록된 EQP ID입니다.');
 
@@ -1046,15 +1186,72 @@
     db.partsCatalog.forEach(p => { historyObj[p] = []; });
 
     db.equipments[newId] = {
+      prcGroup: prcVal,
       parts: [...db.partsCatalog],
       history: historyObj
     };
     selectedEqp = newId;
     closeModal('eqpModal');
     renderSelectors();
-    saveAndSync(`신규 설비 [${newId}]가 추가되었습니다.`);
+    saveAndSync(`신규 설비 [${newId}] (PRC: ${prcVal})가 추가되었습니다.`);
   }
 
+  // 2. 설비별 PRC Group 수정 및 관리 모달
+  function openManageEqpModal(targetEqpId) {
+    const allEqps = Object.keys(db.equipments);
+    if (allEqps.length === 0) return alert('등록된 설비가 없습니다.');
+
+    const target = targetEqpId || selectedEqp || allEqps[0];
+    const selectEl = document.getElementById('manageTargetEqp');
+    selectEl.innerHTML = allEqps.map(id =>
+      `<option value="${escapeHtml(id)}" ${id === target ? 'selected' : ''}>${escapeHtml(id)}</option>`
+    ).join('');
+
+    onManageTargetEqpChange(target);
+    renderManageEqpSummary();
+    document.getElementById('manageEqpModal').classList.add('show');
+  }
+
+  function onManageTargetEqpChange(eqpId) {
+    const eq = db.equipments[eqpId];
+    document.getElementById('manageTargetPrcInput').value = (eq && eq.prcGroup) ? eq.prcGroup : '';
+  }
+
+  function renderManageEqpSummary() {
+    const summaryEl = document.getElementById('manageEqpListSummary');
+    const allEqps = Object.keys(db.equipments);
+    summaryEl.innerHTML = allEqps.map(id => {
+      const prc = db.equipments[id].prcGroup || '미지정';
+      return `• <b>${escapeHtml(id)}</b> ➔ <span style="color:#2563eb; font-weight:700;">${escapeHtml(prc)}</span>`;
+    }).join('<br/>');
+  }
+
+  function saveEqpPrcChange() {
+    const eqpId = document.getElementById('manageTargetEqp').value;
+    const newPrc = document.getElementById('manageTargetPrcInput').value.trim();
+    if (!newPrc) return alert('PRC Group 명을 입력해주세요.');
+
+    if (db.equipments[eqpId]) {
+      db.equipments[eqpId].prcGroup = newPrc;
+      closeModal('manageEqpModal');
+      renderSelectors();
+      saveAndSync(`[${eqpId}] 설비의 PRC Group이 [${newPrc}]로 변경되었습니다.`);
+    }
+  }
+
+  function deleteSelectedEqp() {
+    const eqpId = document.getElementById('manageTargetEqp').value;
+    if (!confirm(`정말로 [${eqpId}] 설비 및 모든 부품 교체 이력을 삭제하시겠습니까?`)) return;
+
+    delete db.equipments[eqpId];
+    const remaining = Object.keys(db.equipments);
+    selectedEqp = remaining[0] || '';
+    closeModal('manageEqpModal');
+    renderSelectors();
+    saveAndSync(`[${eqpId}] 설비가 삭제되었습니다.`);
+  }
+
+  // 3. 관리 부품 추가
   function openPartModal() {
     document.getElementById('newPartNameInput').value = '';
     document.getElementById('newPartCycleInput').value = '';
