@@ -270,6 +270,20 @@
     .part-order-btn:hover:not(:disabled) { background: #cbd5e1; color: #000; }
     .part-order-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+    .part-edit-btn {
+      padding: 3px 8px; font-size: 11px; background: #eff6ff; color: #1d4ed8;
+      border: 1px solid #93c5fd; border-radius: 4px; cursor: pointer; font-weight: 700;
+      line-height: 1.2;
+    }
+    .part-edit-btn:hover { background: #dbeafe; color: #1e40af; }
+    .part-inline-edit-box {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .part-inline-edit-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff;
@@ -479,7 +493,7 @@
     <h3>⚙️ 관리 부품 추가 및 삭제 관리</h3>
     <div class="part-manage-tabs">
       <button type="button" class="pm-tab-btn active" id="pmTabAddBtn" onclick="switchPartManageSubTab('ADD')">➕ 부품 신규 추가</button>
-      <button type="button" class="pm-tab-btn" id="pmTabDelBtn" onclick="switchPartManageSubTab('DEL')">🔄 기존 부품 관리(삭제/순서조정)</button>
+      <button type="button" class="pm-tab-btn" id="pmTabDelBtn" onclick="switchPartManageSubTab('DEL')">⚙️ 기존 부품 관리(수정/순서/삭제)</button>
     </div>
 
     <!-- 5-1. 부품 신규 추가 패널 -->
@@ -531,7 +545,7 @@
         <select id="delPartTargetPrcSelect" onchange="renderDeletePartList()"></select>
       </div>
       <div class="form-group">
-        <label>부품 순서 조정 및 삭제 (목록):</label>
+        <label>부품 수정, 순서 조정 및 삭제 (목록):</label>
         <div id="deletePartListContainer" style="max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; padding:6px; border-radius:8px; background:#fff;"></div>
       </div>
       <div class="modal-footer">
@@ -1422,6 +1436,9 @@
   }
 
   // 삭제 목록 렌더링 (PRC Group 범위 지원)
+  let editingPartName = null;
+
+  // 기존 부품 관리 목록 렌더링 (이름/주기 수정, 순서 이동, 삭제 지원)
   function renderDeletePartList() {
     const scope = document.getElementById('delPartScope').value;
     const targetPrc = document.getElementById('delPartTargetPrcSelect').value;
@@ -1452,17 +1469,37 @@
     }
 
     container.innerHTML = partList.map((p, idx) => {
-      const cycle = (db.partCycles && db.partCycles[p]) ? ` (${db.partCycles[p]})` : '';
+      const curCycle = (db.partCycles && db.partCycles[p]) ? db.partCycles[p] : '';
+      const cycleText = curCycle ? ` (${curCycle})` : ' (주기 미설정)';
       const safeP = p.replace(/'/g, "\\'");
       const isFirst = idx === 0;
       const isLast = idx === partList.length - 1;
+      const isEditing = (editingPartName === p);
+
+      if (isEditing) {
+        return `
+          <div class="part-inline-edit-box">
+            <div style="font-size:11px; font-weight:800; color:#1d4ed8;">✏️ 부품 정보 수정: <b>${escapeHtml(p)}</b></div>
+            <div class="part-inline-edit-row">
+              <input type="text" id="inlineEditPartName" value="${escapeHtml(p)}" placeholder="부품명" style="flex:2; font-weight:700;" />
+              <input type="text" id="inlineEditPartCycle" value="${escapeHtml(curCycle)}" placeholder="교체주기 (예: 30D, 3M, 1Y)" style="flex:1;" />
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:6px;">
+              <button type="button" onclick="cancelInlineEditPart()" style="padding:4px 10px; font-size:11px;">취소</button>
+              <button type="button" class="btn-primary" onclick="saveInlineEditPart('${safeP}', '${scope}')" style="padding:4px 12px; font-size:11px;">수정 저장</button>
+            </div>
+          </div>
+        `;
+      }
+
       return `
         <div class="part-del-item" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:6px;">
           <span style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:11px; font-weight:800; color:#64748b; min-width:20px;">${idx + 1}.</span>
-            <span>⚙️ <b>${escapeHtml(p)}</b> <span style="font-size:11px; color:#64748b;">${escapeHtml(cycle)}</span></span>
+            <span>⚙️ <b>${escapeHtml(p)}</b> <span style="font-size:11px; color:#64748b; font-weight:600;">${escapeHtml(cycleText)}</span></span>
           </span>
           <div class="part-reorder-actions" style="display:inline-flex; align-items:center; gap:4px;">
+            <button type="button" class="part-edit-btn" title="부품명/교체주기 수정" onclick="startInlineEditPart('${safeP}')">수정</button>
             <button type="button" class="part-order-btn" title="위로 이동" onclick="movePartOrder(${idx}, -1, '${scope}')" ${isFirst ? 'disabled' : ''}>▲</button>
             <button type="button" class="part-order-btn" title="아래로 이동" onclick="movePartOrder(${idx}, 1, '${scope}')" ${isLast ? 'disabled' : ''}>▼</button>
             <button type="button" class="part-del-btn" style="margin-left:4px;" onclick="executeDeletePart('${safeP}', '${scope}')">삭제</button>
@@ -1470,6 +1507,85 @@
         </div>
       `;
     }).join('');
+  }
+
+  // 부품 수정 모드 시작
+  function startInlineEditPart(partName) {
+    editingPartName = partName;
+    renderDeletePartList();
+    setTimeout(() => {
+      const input = document.getElementById('inlineEditPartName');
+      if (input) input.focus();
+    }, 50);
+  }
+
+  // 부품 수정 취소
+  function cancelInlineEditPart() {
+    editingPartName = null;
+    renderDeletePartList();
+  }
+
+  // 부품 수정 저장 (이름 변경 시 설비별 history 키값 및 parts 목록 마이그레이션)
+  function saveInlineEditPart(oldPartName, scope) {
+    const newName = (document.getElementById('inlineEditPartName').value || '').trim();
+    const newCycle = (document.getElementById('inlineEditPartCycle').value || '').trim().toUpperCase();
+
+    if (!newName) return alert('부품명을 입력해주세요.');
+
+    if (newCycle) {
+      const parsedDays = parseCycleToDays(newCycle);
+      if (parsedDays === null) {
+        return alert('교체주기 형식 오류입니다! 숫자 뒤에 D, M, Y 중 하나를 붙여서 입력해주세요. (예: 30D, 3M, 1Y)');
+      }
+    }
+
+    // 이름이 변경되었는데 이미 존재하는 다른 부품명과 중복되는지 검사
+    if (newName !== oldPartName && db.partsCatalog.includes(newName)) {
+      return alert('이미 존재하는 부품명입니다. 다른 이름을 사용해주세요.');
+    }
+
+    if (!db.partCycles) db.partCycles = {};
+
+    // 1. 교체주기 업데이트
+    if (db.partCycles[oldPartName]) {
+      delete db.partCycles[oldPartName];
+    }
+    if (newCycle) {
+      db.partCycles[newName] = newCycle;
+    }
+
+    // 2. 부품명 마이그레이션
+    if (newName !== oldPartName) {
+      // 카탈로그 이름 변경
+      const catIdx = db.partsCatalog.indexOf(oldPartName);
+      if (catIdx !== -1) {
+        db.partsCatalog[catIdx] = newName;
+      } else {
+        db.partsCatalog.push(newName);
+      }
+
+      // 전체 설비의 parts 목록 및 history 키값 변경 (기록된 교체이력 완벽 보존)
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if (eqp.parts) {
+          const pIdx = eqp.parts.indexOf(oldPartName);
+          if (pIdx !== -1) eqp.parts[pIdx] = newName;
+        }
+        if (eqp.history && eqp.history[oldPartName]) {
+          eqp.history[newName] = eqp.history[oldPartName];
+          delete eqp.history[oldPartName];
+        }
+      });
+
+      if (selectedPart === oldPartName) {
+        selectedPart = newName;
+      }
+    }
+
+    editingPartName = null;
+    renderDeletePartList();
+    renderSelectors();
+    saveAndSync(`부품 정보가 [${newName}] (주기: ${newCycle || '미설정'})으로 수정되었습니다.`);
   }
 
   // 부품 순서 위/아래 이동 함수
