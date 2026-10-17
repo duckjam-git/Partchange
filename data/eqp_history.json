@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T13:56:56.295Z",
+  "updatedAt": "2026-10-17T13:57:10.746Z",
   "partsCatalog": [
     "AMU Graphite",
     "SRA",
@@ -163,7 +163,7 @@
       }
     },
     "IAH3703": {
-      "prcGroup": "LE",
+      "prcGroup": "HC_Carbon_PH",
       "parts": [
         "AMU Graphite",
         "SRA",
