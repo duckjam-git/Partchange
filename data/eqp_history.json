@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T14:58:33.234Z",
+  "updatedAt": "2026-10-17T16:32:30.102Z",
   "partsCatalog": [
     "AMU Graphite",
     "TP1 Foreline&Trap Filter",
@@ -704,5 +704,18 @@
         "TP1 Foreline&Trap Filter": []
       }
     }
-  }
+  },
+  "deletedHistory": [],
+  "issues": [
+    {
+      "id": "iss_mvcm7bi37sfea",
+      "eqp": "IAH3701",
+      "text": "테스트1. 소스헤드 성능저하. 교체 필요",
+      "author": "최은민",
+      "createdAt": "2026-10-18T03:00:00.000Z",
+      "status": "OPEN",
+      "updatedAt": "2026-10-17T16:32:29.691Z"
+    }
+  ],
+  "deletedIssues": []
 }
