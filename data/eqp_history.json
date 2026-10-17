@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T16:32:30.102Z",
+  "updatedAt": "2026-10-17T16:32:58.708Z",
   "partsCatalog": [
     "AMU Graphite",
     "TP1 Foreline&Trap Filter",
@@ -715,6 +715,15 @@
       "createdAt": "2026-10-18T03:00:00.000Z",
       "status": "OPEN",
       "updatedAt": "2026-10-17T16:32:29.691Z"
+    },
+    {
+      "id": "iss_mvcm7xk1z30yw",
+      "eqp": "IAH3702",
+      "text": "테스트2. 가스잔량 부족. 다음 PM시 GAS 교체 필요",
+      "author": "최은민",
+      "createdAt": "2026-10-01T03:00:00.000Z",
+      "status": "OPEN",
+      "updatedAt": "2026-10-17T16:32:58.273Z"
     }
   ],
   "deletedIssues": []
