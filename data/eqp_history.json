@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T14:31:24.088Z",
+  "updatedAt": "2026-10-17T14:31:26.404Z",
   "partsCatalog": [
     "AMU Graphite",
     "SRA",
@@ -477,13 +477,7 @@
         "V2 VALVE"
       ],
       "history": {
-        "AMU Graphite": [
-          {
-            "date": "26.10.17",
-            "type": "REPLACE",
-            "note": ""
-          }
-        ],
+        "AMU Graphite": [],
         "SRA": [],
         "Beam Stoppper": [],
         "Stopper Housing": [],
