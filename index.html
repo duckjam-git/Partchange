@@ -228,6 +228,29 @@
     .form-group input, .form-group select { width: 100%; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
+    /* Part Management Tab Styles */
+    .part-manage-tabs {
+      display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 14px; gap: 8px;
+    }
+    .pm-tab-btn {
+      padding: 8px 14px; border: none; background: transparent; font-size: 13px;
+      font-weight: 700; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; border-radius: 0;
+    }
+    .pm-tab-btn.active {
+      color: var(--accent); border-bottom-color: var(--accent); background: transparent;
+    }
+    .part-del-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 600;
+    }
+    .part-del-btn {
+      padding: 4px 8px; font-size: 11px; background: #fee2e2; color: #dc2626;
+      border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; font-weight: 700;
+    }
+    .part-del-btn:hover { background: #fecaca; }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff;
@@ -253,7 +276,7 @@
     <div class="header-actions">
       <button onclick="openManageEqpModal()">⚙️ 설비 / PRC Group 설정</button>
       <button onclick="openEqpModal()">➕ EQP ID 추가</button>
-      <button onclick="openPartModal()">➕ 관리 부품 추가</button>
+      <button onclick="openPartModal()">⚙️ 관리 부품 추가/삭제</button>
       <button onclick="pullFromGitHub(true)" id="btnRefreshGithub" style="display:none;">🔄 서버 새로고침</button>
       <button class="btn-dark" onclick="openGithubModal()">☁️ GitHub 서버 연동 설정</button>
     </div>
@@ -385,7 +408,7 @@
   </div>
 </div>
 
-<!-- 3. EQP ID 추가 모달 (PRC Group 지정 지원) -->
+<!-- 3. EQP ID 추가 모달 -->
 <div class="modal-backdrop" id="eqpModal">
   <div class="modal">
     <h3>➕ 신규 설비 (EQP ID) 추가</h3>
@@ -437,32 +460,60 @@
   </div>
 </div>
 
-<!-- 5. 부품명 추가 모달 (교체주기 D/M/Y 지원) -->
+<!-- 5. 관리 부품 추가 및 삭제 통합 모달 -->
 <div class="modal-backdrop" id="partModal">
-  <div class="modal">
-    <h3>➕ 관리 부품 및 교체주기 추가</h3>
-    <p>교체주기는 숫자 뒤에 단위(<b>D, M, Y</b>)를 붙여서 입력하세요. (예: 30D, 3M, 1Y)</p>
-    <div class="form-group">
-      <label>부품명 입력</label>
-      <input type="text" id="newPartNameInput" placeholder="예: Source Head, Liner Set" onkeydown="if(event.key==='Enter') document.getElementById('newPartCycleInput').focus()" />
+  <div class="modal" style="max-width:520px;">
+    <h3>⚙️ 관리 부품 추가 및 삭제 관리</h3>
+    <div class="part-manage-tabs">
+      <button type="button" class="pm-tab-btn active" id="pmTabAddBtn" onclick="switchPartManageSubTab('ADD')">➕ 부품 신규 추가</button>
+      <button type="button" class="pm-tab-btn" id="pmTabDelBtn" onclick="switchPartManageSubTab('DEL')">🗑️ 기존 부품 삭제</button>
     </div>
-    <div class="form-group">
-      <label>교체주기 입력 (선택, 빈칸 가능)</label>
-      <input type="text" id="newPartCycleInput" placeholder="예: 30D, 3M, 6M, 1Y 등" onkeydown="if(event.key==='Enter') addPartName()" />
-      <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;">
-        * D(일): 30D (30일) / M(개월): 1M(30일), 3M(90일), 6M(180일) / Y(년): 1Y(365일)
-      </span>
+
+    <!-- 5-1. 부품 신규 추가 패널 -->
+    <div id="pmAddPanel">
+      <div class="form-group">
+        <label>부품명 입력</label>
+        <input type="text" id="newPartNameInput" placeholder="예: Source Head, Liner Set" onkeydown="if(event.key==='Enter') document.getElementById('newPartCycleInput').focus()" />
+      </div>
+      <div class="form-group">
+        <label>교체주기 입력 (선택, 빈칸 가능)</label>
+        <input type="text" id="newPartCycleInput" placeholder="예: 30D, 3M, 6M, 1Y 등" onkeydown="if(event.key==='Enter') addPartName()" />
+        <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;">
+          * D(일): 30D (30일) / M(개월): 1M(30일), 3M(90일), 6M(180일) / Y(년): 1Y(365일)
+        </span>
+      </div>
+      <div class="form-group">
+        <label>적용 범위</label>
+        <select id="newPartScope">
+          <option value="ALL">전체 설비(EQP ID)에 공통 추가</option>
+          <option value="CURRENT">현재 선택된 설비에만 추가</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeModal('partModal')">취소</button>
+        <button class="btn-primary" onclick="addPartName()">추가하기</button>
+      </div>
     </div>
-    <div class="form-group">
-      <label>적용 범위</label>
-      <select id="newPartScope">
-        <option value="ALL">전체 설비(EQP ID)에 공통 추가</option>
-        <option value="CURRENT">현재 선택된 설비에만 추가</option>
-      </select>
-    </div>
-    <div class="modal-footer">
-      <button onclick="closeModal('partModal')">취소</button>
-      <button class="btn-primary" onclick="addPartName()">추가하기</button>
+
+    <!-- 5-2. 부품 삭제 패널 -->
+    <div id="pmDelPanel" style="display:none;">
+      <p style="font-size:12px; color:#dc2626; margin:0 0 10px;">
+        ⚠️ 부품을 삭제하면 선택된 범위에서 해당 부품과 기록된 교체/CLEAN 이력이 함께 제거됩니다.
+      </p>
+      <div class="form-group">
+        <label>삭제 적용 범위</label>
+        <select id="delPartScope" onchange="renderDeletePartList()">
+          <option value="ALL">전체 설비 및 카탈로그에서 완전히 삭제</option>
+          <option value="CURRENT">현재 선택된 설비(<span id="delPartTargetEqpLabel"></span>)에서만 제거</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>삭제할 부품 선택 (목록):</label>
+        <div id="deletePartListContainer" style="max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; padding:6px; border-radius:8px; background:#fff;"></div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeModal('partModal')">닫기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -509,8 +560,8 @@
 <div class="toast" id="toastMsg"></div>
 
 <script>
-  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_P3D_V1';
-  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_P3D_V1';
+  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_P3D_V2';
+  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_P3D_V2';
   const MIN_HISTORY_COLS = 9;
 
   let memoryFallback = {};
@@ -525,7 +576,6 @@
     }
   };
 
-  // 요청하신 PRC Group(HC_Carbon_PH, LE) 및 교체주기 기본 반영
   const DEFAULT_DB = {
     updatedAt: new Date().toISOString(),
     partsCatalog: [
@@ -623,7 +673,7 @@
 
   let db = loadLocalDb();
   let currentTab = 'EQP';
-  let selectedPrcFilter = 'ALL'; // 'ALL' or specific PRC Group
+  let selectedPrcFilter = 'ALL';
   let selectedEqp = Object.keys(db.equipments)[0] || 'IAH3701';
   let selectedPart = db.partsCatalog[0] || 'AMU Graphite';
   let currentWorkMode = 'REPLACE';
@@ -742,7 +792,6 @@
         const parsed = JSON.parse(raw);
         if (parsed && parsed.equipments) {
           if (!parsed.partCycles) parsed.partCycles = {};
-          // 이전 데이터 호환성 (prcGroup 누락 시 기본값 지정)
           Object.keys(parsed.equipments).forEach(k => {
             if (!parsed.equipments[k].prcGroup) {
               parsed.equipments[k].prcGroup = (k === 'IAH3703') ? 'LE' : 'HC_Carbon_PH';
@@ -830,14 +879,12 @@
   function renderSelectors() {
     const prcGroups = getAllPrcGroups();
 
-    // 1. PRC Group 셀렉터 렌더링
     const prcOptions = `<option value="ALL">전체 PRC Group</option>` +
       prcGroups.map(p => `<option value="${escapeHtml(p)}" ${p === selectedPrcFilter ? 'selected' : ''}>[${escapeHtml(p)}] Group</option>`).join('');
     
     document.getElementById('prcFilterSelect').innerHTML = prcOptions;
     document.getElementById('prcFilterSelectPartTab').innerHTML = prcOptions;
 
-    // 2. 현재 선택된 PRC Group에 속한 EQP ID 목록 필터링
     const filteredEqps = getFilteredEqpList(selectedPrcFilter);
     if (!filteredEqps.includes(selectedEqp)) selectedEqp = filteredEqps[0] || Object.keys(db.equipments)[0] || '';
     if (!db.partsCatalog.includes(selectedPart)) selectedPart = db.partsCatalog[0] || '';
@@ -853,7 +900,6 @@
       `<option value="${escapeHtml(p)}" ${p === selectedPart ? 'selected' : ''}>${escapeHtml(p)}</option>`
     ).join('');
 
-    // 3. 빠른 칩 렌더링
     const chipContainer = document.getElementById('quickChips');
     if (currentTab === 'EQP') {
       chipContainer.innerHTML = `<span style="font-size:12px; font-weight:700; color:#64748b; margin-right:4px;">설비 바로가기:</span>` +
@@ -880,7 +926,6 @@
     const match = Object.keys(db.equipments).find(id => id.toUpperCase().includes(q));
     if (match) {
       selectedEqp = match;
-      // 검색된 설비의 PRC Group으로 필터 자동 동기화
       const matchedPrc = db.equipments[match].prcGroup;
       if (selectedPrcFilter !== 'ALL' && selectedPrcFilter !== matchedPrc) {
         selectedPrcFilter = 'ALL';
@@ -999,7 +1044,7 @@
       tbody.innerHTML = rowsHtml;
 
     } else {
-      // 2. 부품별 전체 설비 조회 탭 (PRC Group 필터 적용)
+      // 2. 부품별 전체 설비 조회 탭
       thCol1.textContent = '부품명';
       thCol2.textContent = 'EQP ID (PRC / 주기 잔여일수)';
       
@@ -1159,7 +1204,6 @@
     document.getElementById('newEqpIdInput').value = '';
     document.getElementById('newEqpPrcInput').value = '';
     
-    // 기존 PRC Group 옵션 채우기
     const prcs = getAllPrcGroups();
     const prcSelect = document.getElementById('newEqpPrcSelect');
     prcSelect.innerHTML = `<option value="">-- 기존 PRC 선택 --</option>` +
@@ -1177,7 +1221,7 @@
     const newId = document.getElementById('newEqpIdInput').value.trim().toUpperCase();
     let prcVal = document.getElementById('newEqpPrcInput').value.trim();
     if (!prcVal) prcVal = document.getElementById('newEqpPrcSelect').value;
-    if (!prcVal) prcVal = 'HC_Carbon_PH'; // 미입력 시 기본값
+    if (!prcVal) prcVal = 'HC_Carbon_PH';
 
     if (!newId) return alert('EQP ID를 입력해주세요.');
     if (db.equipments[newId]) return alert('이미 등록된 EQP ID입니다.');
@@ -1251,12 +1295,26 @@
     saveAndSync(`[${eqpId}] 설비가 삭제되었습니다.`);
   }
 
-  // 3. 관리 부품 추가
+  // 3. 관리 부품 추가/삭제 모달 로직
   function openPartModal() {
     document.getElementById('newPartNameInput').value = '';
     document.getElementById('newPartCycleInput').value = '';
+    switchPartManageSubTab('ADD');
     document.getElementById('partModal').classList.add('show');
     setTimeout(() => document.getElementById('newPartNameInput').focus(), 50);
+  }
+
+  function switchPartManageSubTab(subTab) {
+    const isAdd = subTab === 'ADD';
+    document.getElementById('pmTabAddBtn').classList.toggle('active', isAdd);
+    document.getElementById('pmTabDelBtn').classList.toggle('active', !isAdd);
+    document.getElementById('pmAddPanel').style.display = isAdd ? 'block' : 'none';
+    document.getElementById('pmDelPanel').style.display = isAdd ? 'none' : 'block';
+
+    if (!isAdd) {
+      document.getElementById('delPartTargetEqpLabel').textContent = selectedEqp;
+      renderDeletePartList();
+    }
   }
 
   function addPartName() {
@@ -1299,6 +1357,82 @@
     closeModal('partModal');
     renderSelectors();
     saveAndSync(`부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) 추가되었습니다.`);
+  }
+
+  // 삭제 목록 렌더링
+  function renderDeletePartList() {
+    const scope = document.getElementById('delPartScope').value;
+    const container = document.getElementById('deletePartListContainer');
+
+    let partList = [];
+    if (scope === 'ALL') {
+      partList = [...db.partsCatalog];
+    } else {
+      const eqp = db.equipments[selectedEqp];
+      partList = (eqp && eqp.parts) ? [...eqp.parts] : [];
+    }
+
+    if (partList.length === 0) {
+      container.innerHTML = '<div style="color:#94a3b8; font-size:12px; padding:10px; text-align:center;">등록된 부품이 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = partList.map(p => {
+      const cycle = (db.partCycles && db.partCycles[p]) ? ` (${db.partCycles[p]})` : '';
+      const safeP = p.replace(/'/g, "\'");
+      return `
+        <div class="part-del-item">
+          <span>⚙️ ${escapeHtml(p)} <span style="font-size:11px; color:#64748b;">${escapeHtml(cycle)}</span></span>
+          <button type="button" class="part-del-btn" onclick="executeDeletePart('${safeP}', '${scope}')">삭제</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 부품 삭제 실행
+  function executeDeletePart(partName, scope) {
+    const scopeLabel = (scope === 'ALL') ? '전체 설비 및 카탈로그' : `[${selectedEqp}] 설비`;
+    if (!confirm(`정말로 ${scopeLabel}에서 '${partName}' 부품을 삭제하시겠습니까?
+이 부품에 기록된 모든 교체 이력이 영구히 삭제됩니다.`)) {
+      return;
+    }
+
+    if (scope === 'ALL') {
+      // 1. 카탈로그에서 제거
+      db.partsCatalog = db.partsCatalog.filter(p => p !== partName);
+      if (db.partCycles && db.partCycles[partName]) {
+        delete db.partCycles[partName];
+      }
+      // 2. 모든 설비에서 해당 부품 및 이력 제거
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if (eqp.parts) {
+          eqp.parts = eqp.parts.filter(p => p !== partName);
+        }
+        if (eqp.history && eqp.history[partName]) {
+          delete eqp.history[partName];
+        }
+      });
+    } else {
+      // 현재 선택된 설비에서만 제거
+      const eqp = db.equipments[selectedEqp];
+      if (eqp) {
+        if (eqp.parts) {
+          eqp.parts = eqp.parts.filter(p => p !== partName);
+        }
+        if (eqp.history && eqp.history[partName]) {
+          delete eqp.history[partName];
+        }
+      }
+    }
+
+    if (selectedPart === partName) {
+      selectedPart = db.partsCatalog[0] || '';
+    }
+
+    renderDeletePartList();
+    renderSelectors();
+    saveAndSync(`[${partName}] 부품이 ${scopeLabel}에서 삭제되었습니다.`);
   }
 
   async function saveAndSync(toastText) {
