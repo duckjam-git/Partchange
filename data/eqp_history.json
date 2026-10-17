@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T14:02:26.129Z",
+  "updatedAt": "2026-10-17T14:05:07.001Z",
   "partsCatalog": [
     "AMU Graphite",
     "SRA",
@@ -57,6 +57,11 @@
           {
             "date": "26.10.17",
             "type": "REPLACE",
+            "note": ""
+          },
+          {
+            "date": "26.10.17",
+            "type": "CLEAN",
             "note": ""
           }
         ],
