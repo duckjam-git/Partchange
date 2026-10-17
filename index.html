@@ -292,6 +292,52 @@
       transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); z-index: 2000;
     }
     .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Pending Issues */
+    .issue-badge-btn { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .issue-badge-btn.has-open { background: var(--alert-red-bg); color: var(--alert-red-text); border-color: var(--alert-red-border); }
+    .issue-badge-btn.has-open:hover { background: #fee2e2; }
+    .tab-btn .tab-count {
+      display: inline-block; min-width: 20px; padding: 1px 6px; margin-left: 6px; border-radius: 999px;
+      background: #dc2626; color: #fff; font-size: 11px; font-weight: 800; text-align: center;
+    }
+    .issue-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .issue-form input[type="text"].issue-text { flex: 1; min-width: 240px; }
+    .issue-err { font-size: 12px; font-weight: 700; color: #dc2626; margin-top: 8px; min-height: 0; }
+    .issue-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .issue-card-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid var(--border);
+    }
+    .issue-card-head .eqp-name { font-size: 15px; font-weight: 800; }
+    .issue-card-head .eqp-meta { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 8px; }
+    .issue-count-open { font-size: 12px; font-weight: 800; color: var(--alert-red-text); }
+    .issue-count-clear { font-size: 12px; font-weight: 800; color: var(--alert-green-text); }
+    .issue-item {
+      display: grid; grid-template-columns: 70px 1fr auto; gap: 12px; align-items: center;
+      padding: 10px 16px; border-top: 1px solid #e2e8f0; font-size: 14px;
+    }
+    .issue-card-head + .issue-item { border-top: none; }
+    .issue-age {
+      font-size: 12px; font-weight: 800; text-align: center; padding: 3px 6px; border-radius: 5px; border: 1px solid transparent;
+    }
+    .issue-age.age-red { background: var(--alert-red-bg); color: var(--alert-red-text); border-color: var(--alert-red-border); }
+    .issue-age.age-yellow { background: var(--alert-yellow-bg); color: var(--alert-yellow-text); border-color: var(--alert-yellow-border); }
+    .issue-age.age-green { background: var(--alert-green-bg); color: var(--alert-green-text); border-color: var(--alert-green-border); }
+    .issue-body { white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+    .issue-sub { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; white-space: normal; }
+    .issue-item.is-done .issue-body { text-decoration: line-through; color: #94a3b8; }
+    .issue-done-note {
+      margin-top: 8px; padding: 8px 10px; background: var(--alert-green-bg); border: 1px solid var(--alert-green-border);
+      border-radius: 8px; color: var(--alert-green-text); font-size: 13px; white-space: pre-wrap; word-break: break-word; line-height: 1.45;
+    }
+    .issue-actions { display: flex; gap: 6px; }
+    .issue-actions button { padding: 5px 10px; font-size: 12px; }
+    .issue-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+    @media (max-width: 700px) { .issue-item { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -307,6 +353,7 @@
       <p>PRC Group별 설비 필터링 · 부품별 [교체]/[CLEAN] 전용 기록 · 교체주기 D/M/Y 자동 카운트 · GitHub 실시간 연동 (사용문의:em83.choi@)</p>
     </div>
     <div class="header-actions">
+      <button type="button" class="issue-badge-btn" id="issueBadgeBtn" onclick="switchTab('ISSUE')" title="펜딩 이슈 탭으로 이동">⚠️ 펜딩 이슈 0건</button>
       <button type="button" class="btn-primary" onclick="openEqpModal()">⚙️ 설비 등록/관리</button>
       <button onclick="openPartModal()">⚙️ 관리 부품 추가/삭제</button>
       <button onclick="pullFromGitHub(true)" id="btnRefreshGithub" style="display:none;">🔄 서버 새로고침</button>
@@ -322,10 +369,50 @@
     <button class="tab-btn" id="tabBtnPart" onclick="switchTab('PART')">
       🔍 2. 부품별 전체 설비(EQP ID) 이력 조회 및 기록
     </button>
+    <button class="tab-btn" id="tabBtnIssue" onclick="switchTab('ISSUE')">
+      ⚠️ 3. 설비별 펜딩 이슈<span class="tab-count" id="tabIssueCount" style="display:none;">0</span>
+    </button>
+  </div>
+
+  <!-- 펜딩 이슈 뷰 -->
+  <div id="issueView" style="display:none;">
+    <div class="panel">
+      <div class="issue-form">
+        <select id="issueEqpSelect" style="min-width:150px; font-weight:700;"></select>
+        <input type="date" id="issueDateInput" title="이슈 발생일 (기본값: 오늘)" style="width:140px;" onchange="document.getElementById('issueErr').textContent=''" />
+        <input type="text" id="issueTextInput" class="issue-text" maxlength="500" placeholder="이슈 내용 입력 (예: Heater 온도 편차 발생, 부품 입고 대기)" onkeydown="if(event.key==='Enter'){addIssue();}" oninput="document.getElementById('issueErr').textContent=''" />
+        <input type="text" id="issueAuthorInput" maxlength="20" placeholder="작성자" style="width:110px;" />
+        <button type="button" class="btn-primary" onclick="addIssue()">＋ 이슈 등록</button>
+      </div>
+      <div class="issue-err" id="issueErr"></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label style="font-size:13px; font-weight:800; color:#1e293b;">🏢 PRC Group:</label>
+          <select id="issuePrcSelect" onchange="onIssuePrcChange(this.value)" style="min-width:140px; font-weight:700; background:#f1f5f9;"></select>
+          <input type="text" id="issueSearchInput" placeholder="EQP ID / 내용 검색" oninput="onIssueSearch(this.value)" style="width:190px;" />
+        </div>
+        <div class="toolbar-group">
+          <span style="font-size:12px; font-weight:700; color:#475569;">상태:</span>
+          <div class="filter-switch">
+            <button class="filter-btn" id="issueFilterALL" onclick="setIssueFilter('ALL')">전체</button>
+            <button class="filter-btn active" id="issueFilterOPEN" onclick="setIssueFilter('OPEN')">진행중</button>
+            <button class="filter-btn" id="issueFilterDONE" onclick="setIssueFilter('DONE')">조치완료</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:var(--muted);">
+        💡 <b>[조치완료]</b>: 이슈를 조치완료 처리(이력 보관) | <b>🗑 삭제</b>: 목록에서 완전히 제거 | 경과일 색상: 🟢 7일 미만 · 🟡 7일 이상 · 🔴 14일 이상
+      </div>
+    </div>
+
+    <div id="issueList"></div>
   </div>
 
   <!-- 컨트롤 패널 -->
-  <div class="panel">
+  <div class="panel" id="mainPanel">
     <div class="toolbar">
       <!-- 좌측: PRC Group 필터 및 설비/부품 조회 -->
       <div class="toolbar-group" id="eqpSearchGroup">
@@ -362,7 +449,7 @@
   </div>
 
   <!-- 메인 표 영역 -->
-  <div class="table-wrap">
+  <div class="table-wrap" id="mainTableWrap">
     <table class="history-table">
       <thead>
         <tr>
@@ -388,6 +475,33 @@
         <button type="button" onclick="downloadCsvTemplate()" style="padding:5px 10px; font-size:12px;">📋 Excel 표준양식 다운로드</button>
         <button type="button" class="btn-primary" onclick="openRestoreModal()" style="padding:5px 12px; font-size:12px;">📤 데이터 복원 (Import)</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 이슈 조치완료 모달 -->
+<div class="modal-backdrop" id="resolveIssueModal">
+  <div class="modal" style="max-width:520px;">
+    <h3>✅ 이슈 조치완료 처리</h3>
+    <p id="resolveIssueInfo"></p>
+    <div class="form-group">
+      <label>조치 내역 (작업 내역) *</label>
+      <textarea id="resolveNoteInput" maxlength="1000" rows="4" placeholder="예: Heater 교체 후 온도 편차 정상 확인" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; resize:vertical;" oninput="document.getElementById('resolveErr').textContent=''"></textarea>
+    </div>
+    <div class="form-group" style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>조치 완료일 *</label>
+        <input type="date" id="resolveDateInput" onchange="document.getElementById('resolveErr').textContent=''" />
+      </div>
+      <div style="flex:1;">
+        <label>조치자</label>
+        <input type="text" id="resolveByInput" maxlength="20" placeholder="조치자 이름" />
+      </div>
+    </div>
+    <div class="issue-err" id="resolveErr"></div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeModal('resolveIssueModal')">취소</button>
+      <button type="button" class="btn-primary" onclick="confirmResolveIssue()">조치완료 저장</button>
     </div>
   </div>
 </div>
@@ -652,6 +766,7 @@
 
   const DEFAULT_DB = {
     updatedAt: new Date().toISOString(),
+    issues: [],
     partsCatalog: [
       "AMU Graphite",
       "SRA",
@@ -844,6 +959,60 @@
     list.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   }
 
+  // =========================================================================
+  // 부품 이력 동시 수정 병합 (여러 사용자가 동시에 기록해도 서로의 이력이 사라지지 않도록)
+  // - 이력 1건의 식별키: 설비|부품|날짜|구분 (record.updatedAt = 마지막 수정 시각)
+  // - 삭제/날짜변경은 db.deletedHistory(삭제 기록)로 전파. 삭제 이후에 다시 입력된 이력은 유지
+  // - 설비/부품 구성 자체(추가/삭제/순서/주기)는 병합하지 않고 기존처럼 저장하는 쪽 기준
+  // =========================================================================
+  function histKey(eqpId, partName, rec) {
+    return [eqpId, partName, rec.date || '', rec.type || ''].join('\u0001');
+  }
+
+  function addHistTomb(eqpId, partName, rec) {
+    if (!Array.isArray(db.deletedHistory)) db.deletedHistory = [];
+    db.deletedHistory.push({ k: histKey(eqpId, partName, rec), at: new Date().toISOString() });
+  }
+
+  function mergeHistoryInto(target, other) {
+    if (!target || !target.equipments || !other) return;
+    const tomb = {};
+    [target, other].forEach(src => {
+      (Array.isArray(src.deletedHistory) ? src.deletedHistory : []).forEach(t => {
+        if (t && t.k && (!tomb[t.k] || String(t.at || '') > String(tomb[t.k]))) tomb[t.k] = t.at || '';
+      });
+    });
+    Object.keys(target.equipments).forEach(eqpId => {
+      const te = target.equipments[eqpId];
+      const oe = other.equipments && other.equipments[eqpId];
+      if (!te.history) te.history = {};
+      (te.parts || []).forEach(partName => {
+        const map = {};
+        const lists = [te.history[partName] || [], (oe && oe.history && oe.history[partName]) || []];
+        lists.forEach(list => list.forEach(rec => {
+          if (!rec) return;
+          const k = histKey(eqpId, partName, rec);
+          const cur = map[k];
+          if (!cur || String(rec.updatedAt || '') > String(cur.updatedAt || '')) map[k] = rec;
+        }));
+        const merged = Object.keys(map)
+          .filter(k => !(k in tomb) || String(map[k].updatedAt || '') > String(tomb[k]))
+          .map(k => map[k]);
+        sortHistoryList(merged);
+        te.history[partName] = merged;
+      });
+    });
+    const cutoff = Date.now() - 180 * 86400000;
+    target.deletedHistory = Object.keys(tomb)
+      .filter(k => { const t = new Date(tomb[k]).getTime(); return isNaN(t) || t > cutoff; })
+      .map(k => ({ k, at: tomb[k] }));
+  }
+
+  function historySig(d) {
+    return JSON.stringify(Object.keys(d.equipments || {}).sort().map(e => [e, d.equipments[e].history]))
+      + '|' + (Array.isArray(d.deletedHistory) ? d.deletedHistory.length : 0);
+  }
+
   function getAllPrcGroups() {
     const set = new Set();
     Object.values(db.equipments).forEach(eq => {
@@ -865,6 +1034,7 @@
         const parsed = JSON.parse(raw);
         if (parsed && parsed.equipments) {
           if (!parsed.partCycles) parsed.partCycles = {};
+          if (!Array.isArray(parsed.issues)) parsed.issues = [];
           Object.keys(parsed.equipments).forEach(k => {
             if (!parsed.equipments[k].prcGroup) {
               parsed.equipments[k].prcGroup = (k === 'IAH3703') ? 'LE' : 'HC_Carbon_PH';
@@ -897,22 +1067,342 @@
 
   // 초기화
   window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('todayLabel').textContent = getTodayFormatted();
+    const todayLabelEl = document.getElementById('todayLabel');
+    if (todayLabelEl) todayLabelEl.textContent = getTodayFormatted();
     checkUrlGithubParams();
     renderSelectors();
     renderMainTable();
+    document.getElementById('issueAuthorInput').value = SafeStorage.getItem(ISSUE_AUTHOR_KEY) || '';
+    document.getElementById('issueDateInput').value = todayDateInput();
+    updateIssueBadges();
     initGithubAutoSync();
   });
 
   // 탭 전환
   function switchTab(tab) {
     currentTab = tab;
+    const isIssue = tab === 'ISSUE';
     document.getElementById('tabBtnEqp').classList.toggle('active', tab === 'EQP');
     document.getElementById('tabBtnPart').classList.toggle('active', tab === 'PART');
+    document.getElementById('tabBtnIssue').classList.toggle('active', isIssue);
+    document.getElementById('issueView').style.display = isIssue ? 'block' : 'none';
+    document.getElementById('mainPanel').style.display = isIssue ? 'none' : '';
+    document.getElementById('mainTableWrap').style.display = isIssue ? 'none' : '';
     document.getElementById('eqpSearchGroup').style.display = tab === 'EQP' ? 'flex' : 'none';
     document.getElementById('partSearchGroup').style.display = tab === 'PART' ? 'flex' : 'none';
+    if (isIssue) {
+      renderIssueView();
+      refreshIssuesFromServer();
+      return;
+    }
     renderSelectors();
     renderMainTable();
+  }
+
+  // =========================================================================
+  // 설비별 펜딩 이슈 (db.issues)
+  // { id, eqp, text, author, createdAt(ISO), status: 'OPEN' | 'DONE', doneAt, doneBy }
+  // =========================================================================
+  const ISSUE_AUTHOR_KEY = 'EQP_ISSUE_LAST_AUTHOR_P3D_V3';
+  let issueFilter = 'OPEN';
+  let issuePrcFilter = 'ALL';
+  let issueSearch = '';
+
+  // 이슈 탭을 열거나 다시 돌아올 때 서버의 최신 이슈를 자동으로 불러옴 (30초 이내 중복 호출 방지)
+  let lastIssueRefresh = 0;
+  async function refreshIssuesFromServer(force) {
+    if (!isGithubConfigured(getGithubConfig())) return;
+    if (!force && Date.now() - lastIssueRefresh < 30000) return;
+    lastIssueRefresh = Date.now();
+    await pullFromGitHub(false);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentTab === 'ISSUE') refreshIssuesFromServer();
+  });
+  // 이슈 탭을 열어둔 동안 60초마다 자동 갱신 (입력/조치 창이 열려 있거나 화면이 숨겨진 상태에서는 건너뜀)
+  const ISSUE_AUTO_REFRESH_MS = 60000;
+  setInterval(() => {
+    if (currentTab !== 'ISSUE' || document.visibilityState !== 'visible') return;
+    if (document.getElementById('resolveIssueModal').classList.contains('show')) return;
+    refreshIssuesFromServer(true);
+  }, ISSUE_AUTO_REFRESH_MS);
+
+  function ensureIssues() {
+    if (!Array.isArray(db.issues)) db.issues = [];
+    return db.issues;
+  }
+
+  // 날짜 입력(YYYY-MM-DD) <-> 저장용 ISO 변환 (정오 기준으로 저장해 시간대 날짜 밀림 방지)
+  function todayDateInput() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  function dateInputToIso(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3], 12, 0, 0).toISOString();
+  }
+  function isoToDateInput(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return todayDateInput();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+
+  // 두 이슈 데이터를 병합 (여러 사용자가 동시에 수정해도 서로의 이슈가 사라지지 않도록)
+  // - 같은 id는 updatedAt이 더 최근인 쪽 사용 (같으면 base 우선)
+  // - 삭제는 deletedIssues(삭제 기록)로 전파
+  function mergeIssueData(base, incoming) {
+    const tomb = {};
+    [base, incoming].forEach(src => {
+      (src && Array.isArray(src.deletedIssues) ? src.deletedIssues : []).forEach(t => {
+        if (t && t.id && (!tomb[t.id] || String(t.at || '') > String(tomb[t.id]))) tomb[t.id] = t.at || '';
+      });
+    });
+    const map = {};
+    [base, incoming].forEach(src => {
+      (src && Array.isArray(src.issues) ? src.issues : []).forEach(iss => {
+        if (!iss || !iss.id) return;
+        const cur = map[iss.id];
+        if (!cur || String(iss.updatedAt || '') > String(cur.updatedAt || '')) map[iss.id] = iss;
+      });
+    });
+    const cutoff = Date.now() - 180 * 86400000;
+    const deletedIssues = Object.keys(tomb)
+      .filter(id => { const t = new Date(tomb[id]).getTime(); return isNaN(t) || t > cutoff; })
+      .map(id => ({ id, at: tomb[id] }));
+    const issues = Object.keys(map).filter(id => !(id in tomb)).map(id => map[id]);
+    return { issues, deletedIssues };
+  }
+
+  function applyMergedIssues(m) {
+    db.issues = m.issues;
+    db.deletedIssues = m.deletedIssues;
+  }
+
+  function issueSig(list) {
+    return JSON.stringify((list || []).slice().sort((a, b) => (a.id < b.id ? -1 : 1)));
+  }
+
+  function getIssueAgeDays(iss) {
+    const c = new Date(iss.createdAt);
+    if (isNaN(c.getTime())) return 0;
+    const now = new Date();
+    const a = Date.UTC(c.getFullYear(), c.getMonth(), c.getDate());
+    const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.max(0, Math.round((b - a) / 86400000));
+  }
+
+  function formatIssueDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const p = n => String(n).padStart(2, '0');
+    return `${String(d.getFullYear()).slice(2)}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
+  }
+
+  function updateIssueBadges() {
+    const open = ensureIssues().filter(i => i.status !== 'DONE');
+    const eqpCount = new Set(open.map(i => i.eqp)).size;
+    const btn = document.getElementById('issueBadgeBtn');
+    btn.textContent = open.length
+      ? `⚠️ 펜딩 이슈 ${open.length}건 · 설비 ${eqpCount}대`
+      : '✅ 펜딩 이슈 없음';
+    btn.classList.toggle('has-open', open.length > 0);
+    const tc = document.getElementById('tabIssueCount');
+    tc.textContent = open.length;
+    tc.style.display = open.length ? 'inline-block' : 'none';
+  }
+
+  function setIssueFilter(f) {
+    issueFilter = f;
+    renderIssueView();
+  }
+
+  function onIssuePrcChange(prc) {
+    issuePrcFilter = prc;
+    renderIssueView();
+  }
+
+  function onIssueSearch(val) {
+    issueSearch = val.trim().toLowerCase();
+    renderIssueList();
+  }
+
+  function renderIssueView() {
+    ['ALL', 'OPEN', 'DONE'].forEach(f =>
+      document.getElementById('issueFilter' + f).classList.toggle('active', issueFilter === f));
+
+    const prcGroups = getAllPrcGroups();
+    if (issuePrcFilter !== 'ALL' && !prcGroups.includes(issuePrcFilter)) issuePrcFilter = 'ALL';
+    document.getElementById('issuePrcSelect').innerHTML = `<option value="ALL">전체 PRC Group</option>` +
+      prcGroups.map(p => `<option value="${escapeHtml(p)}" ${p === issuePrcFilter ? 'selected' : ''}>[${escapeHtml(p)}] Group</option>`).join('');
+
+    const eqSel = document.getElementById('issueEqpSelect');
+    const prevVal = eqSel.value;
+    const allEqps = Object.keys(db.equipments);
+    eqSel.innerHTML = allEqps.map(id =>
+      `<option value="${escapeHtml(id)}">${escapeHtml(id)} (${escapeHtml(db.equipments[id].prcGroup || '미지정')})</option>`).join('');
+    if (allEqps.includes(prevVal)) eqSel.value = prevVal;
+    else if (allEqps.includes(selectedEqp)) eqSel.value = selectedEqp;
+
+    renderIssueList();
+  }
+
+  function renderIssueList() {
+    updateIssueBadges();
+    const box = document.getElementById('issueList');
+    const issues = ensureIssues();
+
+    const visible = issues.filter(i => {
+      const eqp = db.equipments[i.eqp];
+      if (issueFilter === 'OPEN' && i.status === 'DONE') return false;
+      if (issueFilter === 'DONE' && i.status !== 'DONE') return false;
+      if (issuePrcFilter !== 'ALL' && (!eqp || (eqp.prcGroup || '기타') !== issuePrcFilter)) return false;
+      if (issueSearch && !(`${i.eqp} ${i.text} ${i.author || ''}`.toLowerCase().includes(issueSearch))) return false;
+      return true;
+    });
+
+    if (!visible.length) {
+      const msg = issueFilter === 'OPEN' ? '진행중인 펜딩 이슈가 없습니다. 위 입력창에서 새 이슈를 등록하세요.'
+        : issueFilter === 'DONE' ? '조치완료된 이슈가 없습니다.' : '등록된 이슈가 없습니다.';
+      box.innerHTML = `<div class="issue-empty">${msg}</div>`;
+      return;
+    }
+
+    const groups = {};
+    visible.forEach(i => { (groups[i.eqp] = groups[i.eqp] || []).push(i); });
+    const openCnt = id => groups[id].filter(x => x.status !== 'DONE').length;
+    const oldest = id => Math.max(0, ...groups[id].filter(x => x.status !== 'DONE').map(getIssueAgeDays));
+
+    const eqpIds = Object.keys(groups).sort((a, b) => openCnt(b) - openCnt(a) || oldest(b) - oldest(a) || a.localeCompare(b));
+
+    box.innerHTML = eqpIds.map(id => {
+      const eqp = db.equipments[id];
+      const prc = eqp ? (eqp.prcGroup || '미지정') : '삭제된 설비';
+      const o = openCnt(id);
+      const items = groups[id].slice().sort((a, b) =>
+        (a.status === 'DONE') - (b.status === 'DONE') || new Date(a.createdAt) - new Date(b.createdAt));
+      const rows = items.map(i => {
+        const done = i.status === 'DONE';
+        const age = getIssueAgeDays(i);
+        const ageCls = done ? 'age-green' : age >= 14 ? 'age-red' : age >= 7 ? 'age-yellow' : 'age-green';
+        const ageTxt = done ? '완료' : (age === 0 ? '오늘' : `${age}일`);
+        const sub = `${escapeHtml(i.author || '작성자 미입력')} · ${formatIssueDate(i.createdAt)} 등록`;
+        const doneBlock = done
+          ? `<div class="issue-done-note"><b>✅ 조치내역</b> ${escapeHtml(i.doneNote || '(내역 없음)')}
+              <span class="issue-sub">${escapeHtml(i.doneBy || '조치자 미입력')} · ${formatIssueDate(i.doneAt)} 조치완료</span></div>`
+          : '';
+        return `<div class="issue-item ${done ? 'is-done' : ''}">
+          <span class="issue-age ${ageCls}">${ageTxt}</span>
+          <div><div class="issue-body">${escapeHtml(i.text)}<span class="issue-sub">${sub}</span></div>${doneBlock}</div>
+          <div class="issue-actions">
+            ${done
+              ? `<button type="button" onclick="reopenIssue('${escapeHtml(i.id)}')">↩ 되돌리기</button>`
+              : `<button type="button" class="btn-primary" onclick="resolveIssue('${escapeHtml(i.id)}')">✅ 조치완료</button>`}
+            <button type="button" class="btn-danger" onclick="deleteIssue('${escapeHtml(i.id)}')" aria-label="이슈 삭제">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="issue-card">
+        <div class="issue-card-head">
+          <div><span class="eqp-name">${escapeHtml(id)}</span><span class="eqp-meta">${escapeHtml(prc)}</span></div>
+          <span class="${o ? 'issue-count-open' : 'issue-count-clear'}">${o ? `🔴 진행중 ${o}건` : '✅ 모두 조치됨'}</span>
+        </div>${rows}</div>`;
+    }).join('');
+  }
+
+  function addIssue() {
+    const errEl = document.getElementById('issueErr');
+    const eqpId = document.getElementById('issueEqpSelect').value;
+    const text = document.getElementById('issueTextInput').value.trim();
+    const author = document.getElementById('issueAuthorInput').value.trim();
+    if (!eqpId) { errEl.textContent = '설비를 선택하세요.'; return; }
+    if (!text) { errEl.textContent = '이슈 내용을 입력하세요.'; return; }
+    const dateVal = document.getElementById('issueDateInput').value;
+    const createdAt = dateInputToIso(dateVal);
+    if (!createdAt) { errEl.textContent = '이슈 날짜를 입력하세요.'; return; }
+    if (dateVal > todayDateInput()) { errEl.textContent = '이슈 날짜는 오늘 이후로 입력할 수 없습니다.'; return; }
+    errEl.textContent = '';
+
+    ensureIssues().push({
+      id: 'iss_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      eqp: eqpId,
+      text,
+      author,
+      createdAt,
+      status: 'OPEN',
+      updatedAt: new Date().toISOString()
+    });
+    SafeStorage.setItem(ISSUE_AUTHOR_KEY, author);
+    document.getElementById('issueTextInput').value = '';
+    document.getElementById('issueDateInput').value = todayDateInput();
+    if (issueFilter === 'DONE') issueFilter = 'OPEN';
+    renderIssueView();
+    saveAndSync(`⚠️ [${eqpId}] 펜딩 이슈가 등록되었습니다.`);
+  }
+
+  let resolvingIssueId = null;
+
+  function resolveIssue(id) {
+    const iss = ensureIssues().find(x => x.id === id);
+    if (!iss) return;
+    resolvingIssueId = id;
+    document.getElementById('resolveIssueInfo').textContent = `[${iss.eqp}] ${iss.text}`;
+    document.getElementById('resolveNoteInput').value = '';
+    document.getElementById('resolveDateInput').value = todayDateInput();
+    document.getElementById('resolveByInput').value = document.getElementById('issueAuthorInput').value.trim();
+    document.getElementById('resolveErr').textContent = '';
+    document.getElementById('resolveIssueModal').classList.add('show');
+    document.getElementById('resolveNoteInput').focus();
+  }
+
+  function confirmResolveIssue() {
+    const iss = ensureIssues().find(x => x.id === resolvingIssueId);
+    const errEl = document.getElementById('resolveErr');
+    if (!iss) { closeModal('resolveIssueModal'); return; }
+    const note = document.getElementById('resolveNoteInput').value.trim();
+    const dateVal = document.getElementById('resolveDateInput').value;
+    const doneAt = dateInputToIso(dateVal);
+    if (!note) { errEl.textContent = '조치 내역을 입력하세요.'; return; }
+    if (!doneAt) { errEl.textContent = '조치 완료일을 입력하세요.'; return; }
+    if (dateVal > todayDateInput()) { errEl.textContent = '조치 완료일은 오늘 이후로 입력할 수 없습니다.'; return; }
+    if (dateVal < isoToDateInput(iss.createdAt)) { errEl.textContent = '조치 완료일은 이슈 등록일보다 빠를 수 없습니다.'; return; }
+
+    iss.status = 'DONE';
+    iss.doneNote = note;
+    iss.doneAt = doneAt;
+    iss.doneBy = document.getElementById('resolveByInput').value.trim();
+    iss.updatedAt = new Date().toISOString();
+    closeModal('resolveIssueModal');
+    resolvingIssueId = null;
+    renderIssueView();
+    saveAndSync(`✅ [${iss.eqp}] 이슈가 조치완료 처리되었습니다.`);
+  }
+
+  function reopenIssue(id) {
+    const iss = ensureIssues().find(x => x.id === id);
+    if (!iss) return;
+    iss.status = 'OPEN';
+    delete iss.doneAt;
+    delete iss.doneBy;
+    delete iss.doneNote;
+    iss.updatedAt = new Date().toISOString();
+    renderIssueView();
+    saveAndSync(`↩ [${iss.eqp}] 이슈가 진행중으로 되돌려졌습니다.`);
+  }
+
+  function deleteIssue(id) {
+    const issues = ensureIssues();
+    const idx = issues.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    if (!confirm(`[${issues[idx].eqp}] 이 이슈를 완전히 삭제하시겠습니까?\n\n${issues[idx].text}`)) return;
+    const eqp = issues[idx].eqp;
+    if (!Array.isArray(db.deletedIssues)) db.deletedIssues = [];
+    db.deletedIssues.push({ id: issues[idx].id, at: new Date().toISOString() });
+    issues.splice(idx, 1);
+    renderIssueView();
+    saveAndSync(`🗑 [${eqp}] 이슈가 삭제되었습니다.`);
   }
 
   function setFilterMode(filter) {
@@ -1198,7 +1688,7 @@
       return;
     }
 
-    list.push({ date: today, type: workType, note: '' });
+    list.push({ date: today, type: workType, note: '', updatedAt: new Date().toISOString() });
     sortHistoryList(list);
     saveAndSync(`[${eqpId}] ${partName} - 오늘(${today}) [${workLabel}] 이력이 기록되었습니다.`);
   }
@@ -1243,10 +1733,15 @@
     }
     const list = db.equipments[eqpId].history[partName];
 
+    const stamp = new Date().toISOString();
     if (recordIndex === -1) {
-      list.push({ date: dateVal, type: workType, note: noteVal });
+      list.push({ date: dateVal, type: workType, note: noteVal, updatedAt: stamp });
     } else if (list[recordIndex]) {
-      list[recordIndex] = { date: dateVal, type: workType, note: noteVal };
+      const oldRec = list[recordIndex];
+      if (histKey(eqpId, partName, oldRec) !== histKey(eqpId, partName, { date: dateVal, type: workType })) {
+        addHistTomb(eqpId, partName, oldRec); // 날짜/구분을 바꾸면 이전 이력은 삭제된 것으로 기록
+      }
+      list[recordIndex] = { date: dateVal, type: workType, note: noteVal, updatedAt: stamp };
     }
 
     sortHistoryList(list);
@@ -1259,6 +1754,7 @@
     const { eqpId, partName, recordIndex } = editingContext;
     const list = db.equipments[eqpId].history[partName];
     if (recordIndex >= 0 && list && list[recordIndex]) {
+      addHistTomb(eqpId, partName, list[recordIndex]);
       list.splice(recordIndex, 1);
       closeModal('editCellModal');
       saveAndSync(`[${eqpId}] ${partName} 이력이 삭제되었습니다.`);
@@ -1870,7 +2366,9 @@
 
   async function saveAndSync(toastText) {
     saveLocalDb();
-    renderMainTable();
+    if (currentTab === 'ISSUE') renderIssueView();
+    else renderMainTable();
+    updateIssueBadges();
     if (toastText) showToast(toastText);
     await pushToGitHub();
   }
@@ -1881,11 +2379,11 @@
   // 사용자가 화면의 [GitHub 서버 연동 설정]에서 직접 변경하면 사용자 설정이 우선 적용됩니다.
   // =========================================================================
   const HARDCODED_GITHUB_CONFIG = {
-    owner: "",                     // 예: "eunmin-choi"
-    repo: "",                      // 예: "p3d-part-history"
+    owner: "duckjam-git",                     // 예: "eunmin-choi"
+    repo: "Partchange",                      // 예: "p3d-part-history"
     branch: "main",                // 기본 브랜치
     path: "data/eqp_history.json", // 데이터 파일 경로
-    token: ""                      // 예: "ghp_xxxxxxxxxxxxxxxxxxxx"
+    token: "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"                      // 예: "ghp_xxxxxxxxxxxxxxxxxxxx"
   };
   // =========================================================================
 
@@ -2038,13 +2536,24 @@
       const remoteDb = JSON.parse(contentStr);
 
       if (remoteDb && remoteDb.equipments) {
+        // 내 브라우저에만 있는 이슈(저장 실패 등)가 사라지지 않도록 서버 데이터와 병합
+        const merged = mergeIssueData(remoteDb, db);
+        const remoteTombCnt = Array.isArray(remoteDb.deletedIssues) ? remoteDb.deletedIssues.length : 0;
+        const remoteHistSig = historySig(remoteDb);
+        mergeHistoryInto(remoteDb, db); // 내 브라우저에만 있는 부품 이력도 보존
+        const needsPush = issueSig(merged.issues) !== issueSig(remoteDb.issues) || merged.deletedIssues.length !== remoteTombCnt
+          || historySig(remoteDb) !== remoteHistSig;
         db = remoteDb;
         if (!db.partCycles) db.partCycles = {};
+        applyMergedIssues(merged);
         saveLocalDb();
         renderSelectors();
         renderMainTable();
+        updateIssueBadges();
+        if (currentTab === 'ISSUE') renderIssueView();
         updateSyncBadge('online', `☁️ GitHub 동기화 완료 (${cfg.owner}/${cfg.repo})`);
         if (showNotice) showToast('☁️ GitHub 서버에서 최신 데이터를 불러왔습니다.');
+        if (needsPush) pushToGitHub();
         return true;
       }
     } catch (err) {
@@ -2053,7 +2562,7 @@
     return false;
   }
 
-  async function pushToGitHub() {
+  async function pushToGitHub(retries = 2) {
     const cfg = getGithubConfig();
     if (!isGithubConfigured(cfg)) return;
 
@@ -2069,6 +2578,19 @@
       if (getRes.ok) {
         const meta = await getRes.json();
         githubFileSha = meta.sha;
+        // 저장 직전 서버의 최신 이슈를 병합 (다른 사람이 등록/조치한 이슈 보존)
+        try {
+          const remoteDb = JSON.parse(decodeURIComponent(escape(atob((meta.content || '').replace(/\s+/g, '')))));
+          if (remoteDb && remoteDb.equipments) {
+            const histBefore = historySig(db);
+            applyMergedIssues(mergeIssueData(remoteDb, db));
+            mergeHistoryInto(db, remoteDb);
+            saveLocalDb();
+            updateIssueBadges();
+            if (currentTab === 'ISSUE') renderIssueView();
+            else if (historySig(db) !== histBefore) renderMainTable();
+          }
+        } catch (mergeErr) {}
       }
 
       const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
@@ -2090,6 +2612,9 @@
         body: JSON.stringify(bodyPayload)
       });
 
+      if ((putRes.status === 409 || putRes.status === 422) && retries > 0) {
+        return pushToGitHub(retries - 1); // 동시에 저장되어 sha가 달라진 경우: 최신 상태를 다시 받아 병합 후 재시도
+      }
       if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
       const putData = await putRes.json();
       githubFileSha = putData.content.sha;
@@ -2350,9 +2875,22 @@
       if (!confirm('정말로 기존 데이터를 모두 지우고 가져온 파일의 데이터로 완전히 교체하시겠습니까?')) {
         return;
       }
+      // CSV 등 이슈 정보가 없는 파일로 교체해도 기존 펜딩 이슈는 보존
+      const keepIssues = Array.isArray(importedDb.issues) ? importedDb.issues : (db.issues || []);
+      const tombs = Array.isArray(db.deletedIssues) ? db.deletedIssues.slice() : [];
+      const keepIds = new Set(keepIssues.map(x => x.id));
+      (db.issues || []).forEach(x => { if (!keepIds.has(x.id)) tombs.push({ id: x.id, at: new Date().toISOString() }); });
       db = importedDb;
+      db.issues = keepIssues;
+      db.deletedIssues = tombs;
     } else {
       // MERGE (병합 모드)
+      if (Array.isArray(importedDb.issues)) {
+        if (!Array.isArray(db.issues)) db.issues = [];
+        importedDb.issues.forEach(iss => {
+          if (iss && iss.id && !db.issues.some(x => x.id === iss.id)) db.issues.push(iss);
+        });
+      }
       (importedDb.partsCatalog || []).forEach(p => {
         if (!db.partsCatalog.includes(p)) db.partsCatalog.push(p);
       });
