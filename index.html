@@ -584,11 +584,14 @@
     <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px; color:#475569; margin-bottom:12px;">
       💡 <b>팀원 공유 팁:</b> 아래 <b>[팀원 공유용 링크 복사]</b>를 누르면 설정 정보가 포함된 접속 URL이 복사되어, 동료가 링크로 접속만 해도 동일한 GitHub DB에 바로 연결됩니다.
     </div>
-    <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap;">
-      <button onclick="copyShareableUrl()">🔗 팀원 공유용 링크 복사</button>
+    <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
       <div style="display:flex; gap:6px;">
-        <button onclick="closeModal('githubModal')">닫기</button>
-        <button class="btn-primary" onclick="saveGithubConfigAndSync()">연동 저장 및 동기화</button>
+        <button type="button" onclick="copyShareableUrl()">🔗 팀원 공유용 링크 복사</button>
+        <button type="button" onclick="resetToHardcodedConfig()" title="코드 내 고정된 기본값으로 복원">🔄 기본값(코드설정)으로 복원</button>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" onclick="closeModal('githubModal')">닫기</button>
+        <button type="button" class="btn-primary" onclick="saveGithubConfigAndSync()">연동 저장 및 동기화</button>
       </div>
     </div>
   </div>
@@ -1716,16 +1719,56 @@
     await pushToGitHub();
   }
 
+  // =========================================================================
+  // [★ 옵션] GitHub 기본 연결 설정 하드코딩 영역
+  // 코드 자체에 기본 설정을 고정해두면, 팀원들이 토큰 입력 없이 기본 주소로 접속해도 자동 연결됩니다.
+  // 사용자가 화면의 [GitHub 서버 연동 설정]에서 직접 변경하면 사용자 설정이 우선 적용됩니다.
+  // =========================================================================
+  const HARDCODED_GITHUB_CONFIG = {
+    owner: "",                     // 예: "eunmin-choi"
+    repo: "",                      // 예: "p3d-part-history"
+    branch: "main",                // 기본 브랜치
+    path: "data/eqp_history.json", // 데이터 파일 경로
+    token: ""                      // 예: "ghp_xxxxxxxxxxxxxxxxxxxx"
+  };
+  // =========================================================================
+
   function getGithubConfig() {
+    // 1순위: 사용자가 화면(UI 모달)이나 공유 링크를 통해 저장한 로컬 설정
     try {
       const raw = SafeStorage.getItem(GH_CONFIG_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && (parsed.owner || parsed.repo || parsed.token)) {
+          return {
+            owner: parsed.owner || HARDCODED_GITHUB_CONFIG.owner || '',
+            repo: parsed.repo || HARDCODED_GITHUB_CONFIG.repo || '',
+            branch: parsed.branch || HARDCODED_GITHUB_CONFIG.branch || 'main',
+            path: parsed.path || HARDCODED_GITHUB_CONFIG.path || 'data/eqp_history.json',
+            token: parsed.token || HARDCODED_GITHUB_CONFIG.token || ''
+          };
+        }
+      }
     } catch (e) {}
-    return { owner: '', repo: '', branch: 'main', path: 'data/eqp_history.json', token: '' };
+
+    // 2순위: 코드에 고정된 기본 설정값 (HARDCODED_GITHUB_CONFIG)
+    return {
+      owner: HARDCODED_GITHUB_CONFIG.owner || '',
+      repo: HARDCODED_GITHUB_CONFIG.repo || '',
+      branch: HARDCODED_GITHUB_CONFIG.branch || 'main',
+      path: HARDCODED_GITHUB_CONFIG.path || 'data/eqp_history.json',
+      token: HARDCODED_GITHUB_CONFIG.token || ''
+    };
   }
 
   function isGithubConfigured(cfg) {
-    return cfg && cfg.owner && cfg.repo && cfg.path && cfg.token;
+    return Boolean(cfg && cfg.owner && cfg.repo && cfg.path && cfg.token);
+  }
+
+  function resetToHardcodedConfig() {
+    SafeStorage.setItem(GH_CONFIG_KEY, JSON.stringify(HARDCODED_GITHUB_CONFIG));
+    openGithubModal();
+    showToast('코드 내 기본 고정 설정값으로 복원되었습니다.');
   }
 
   function openGithubModal() {
