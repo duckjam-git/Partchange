@@ -307,8 +307,7 @@
       <p>PRC Group별 설비 필터링 · 부품별 [교체]/[CLEAN] 전용 기록 · 교체주기 D/M/Y 자동 카운트 · GitHub 실시간 연동</p>
     </div>
     <div class="header-actions">
-      <button onclick="openManageEqpModal()">⚙️ 설비 / PRC Group 설정</button>
-      <button onclick="openEqpModal()">➕ EQP ID 추가</button>
+      <button type="button" class="btn-primary" onclick="openEqpModal()">⚙️ 설비 등록/관리</button>
       <button onclick="openPartModal()">⚙️ 관리 부품 추가/삭제</button>
       <button onclick="pullFromGitHub(true)" id="btnRefreshGithub" style="display:none;">🔄 서버 새로고침</button>
       <button class="btn-dark" onclick="openGithubModal()">☁️ GitHub 서버 연동 설정</button>
@@ -383,8 +382,11 @@
         <span class="legend-dot"><span style="background:#fefce8; color:#854d0e; padding:2px 6px; border-radius:4px; font-size:11px;">🟡 교체 임박(7일 이내)</span></span>
         <span>💡 <b>기록 방법:</b> 각 부품 우측의 [교체] 또는 [CLEAN] 버튼 클릭 시 오늘 날짜 자동 기록 | <b>날짜 셀 클릭:</b> 수동 수정/삭제 | <b>EQP ID 클릭:</b> PRC Group 수정</span>
       </div>
-      <div>
-        <button onclick="exportJsonFile()" style="padding:5px 10px; font-size:12px;">📥 JSON 백업 다운로드</button>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <button type="button" onclick="exportJsonFile()" style="padding:5px 10px; font-size:12px;">📥 JSON 백업</button>
+        <button type="button" onclick="exportCsvFile()" style="padding:5px 10px; font-size:12px; background:#f0fdf4; color:#166534; border-color:#bbf7d0;">📊 Excel(CSV) 백업</button>
+        <button type="button" onclick="downloadCsvTemplate()" style="padding:5px 10px; font-size:12px;">📋 Excel 표준양식 다운로드</button>
+        <button type="button" class="btn-primary" onclick="openRestoreModal()" style="padding:5px 12px; font-size:12px;">📤 데이터 복원 (Import)</button>
       </div>
     </div>
   </div>
@@ -435,58 +437,51 @@
   </div>
 </div>
 
-<!-- 3. EQP ID 추가 모달 -->
+<!-- 3. 설비 등록/관리 통합 모달 -->
 <div class="modal-backdrop" id="eqpModal">
-  <div class="modal">
-    <h3>➕ 신규 설비 (EQP ID) 추가</h3>
-    <p>설비 ID와 소속될 PRC Group을 지정하여 등록합니다.</p>
-    <div class="form-group">
-      <label>PRC Group 선택 또는 신규 직접 입력</label>
-      <div style="display:flex; gap:8px; margin-bottom:6px;">
-        <select id="newEqpPrcSelect" onchange="onSelectExistingPrc(this.value)" style="width:50%;">
-          <option value="">-- 기존 PRC 선택 --</option>
-        </select>
-        <input type="text" id="newEqpPrcInput" placeholder="신규 PRC 입력 (예: HC_Carbon_PH)" style="width:50%;" />
+  <div class="modal" style="max-width:560px;">
+    <h3>⚙️ 설비 등록 및 관리</h3>
+    <div class="part-manage-tabs">
+      <button type="button" class="pm-tab-btn active" id="eqpTabAddBtn" onclick="switchEqpManageSubTab('ADD')">➕ 신규 설비 등록</button>
+      <button type="button" class="pm-tab-btn" id="eqpTabManageBtn" onclick="switchEqpManageSubTab('MANAGE')">🔄 기존 설비 관리(수정/순서/삭제)</button>
+    </div>
+
+    <!-- 3-1. 신규 설비 등록 패널 -->
+    <div id="eqpAddPanel">
+      <div class="form-group">
+        <label>소속 PRC Group 선택 또는 신규 직접 입력</label>
+        <div style="display:flex; gap:8px; margin-bottom:6px;">
+          <select id="newEqpPrcSelect" onchange="onSelectExistingPrc(this.value)" style="width:50%;">
+            <option value="">-- 기존 PRC 선택 --</option>
+          </select>
+          <input type="text" id="newEqpPrcInput" placeholder="신규 PRC 입력 (예: HC_Carbon_PH)" style="width:50%;" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>EQP ID 입력</label>
+        <input type="text" id="newEqpIdInput" placeholder="예: IAH3704" onkeydown="if(event.key==='Enter') addEqpId()" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal('eqpModal')">취소</button>
+        <button type="button" class="btn-primary" onclick="addEqpId()">등록하기</button>
       </div>
     </div>
-    <div class="form-group">
-      <label>EQP ID 입력</label>
-      <input type="text" id="newEqpIdInput" placeholder="예: IAH3704" onkeydown="if(event.key==='Enter') addEqpId()" />
-    </div>
-    <div class="modal-footer">
-      <button onclick="closeModal('eqpModal')">취소</button>
-      <button class="btn-primary" onclick="addEqpId()">추가하기</button>
-    </div>
-  </div>
-</div>
 
-<!-- 4. 설비별 PRC Group 수정 및 관리 모달 -->
-<div class="modal-backdrop" id="manageEqpModal">
-  <div class="modal" style="max-width:520px;">
-    <h3>⚙️ 설비별 PRC Group 수정 및 관리</h3>
-    <p>각 설비의 소속 PRC Group을 변경하거나 수정할 수 있습니다.</p>
-    <div class="form-group">
-      <label>대상 설비 선택</label>
-      <select id="manageTargetEqp" onchange="onManageTargetEqpChange(this.value)"></select>
-    </div>
-    <div class="form-group">
-      <label>현재 소속 PRC Group 변경</label>
-      <input type="text" id="manageTargetPrcInput" placeholder="예: HC_Carbon_PH 또는 LE" />
-    </div>
-    <div class="form-group" style="max-height:160px; overflow-y:auto; border:1px solid #e2e8f0; padding:8px; border-radius:8px; background:#f8fafc;">
-      <label style="margin-bottom:4px;">현재 등록된 전체 설비 목록:</label>
-      <div id="manageEqpListSummary" style="font-size:12px; line-height:1.8; color:#334155;"></div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between;">
-      <button class="btn-danger" onclick="deleteSelectedEqp()">🗑️ 설비 삭제</button>
-      <div style="display:flex; gap:6px;">
-        <button onclick="closeModal('manageEqpModal')">취소</button>
-        <button class="btn-primary" onclick="saveEqpPrcChange()">PRC Group 저장</button>
+    <!-- 3-2. 기존 설비 관리 패널 (수정 / 순서조정 / 삭제) -->
+    <div id="eqpManagePanel" style="display:none;">
+      <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <label style="margin:0;">설비 순서 조정, 명칭/PRC 수정 및 삭제:</label>
+        <button type="button" onclick="sortEquipmentsByName()" style="padding:3px 8px; font-size:11px; background:#f1f5f9; border-color:#cbd5e1;">🔤 전체 이름순(A-Z) 자동정렬</button>
+      </div>
+      <div class="form-group">
+        <div id="eqpManageListContainer" style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; padding:6px; border-radius:8px; background:#fff;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal('eqpModal')">닫기</button>
       </div>
     </div>
   </div>
 </div>
-
 <!-- 5. 관리 부품 추가 및 삭제 통합 모달 (선택 PRC Group 적용 범위 지원) -->
 <div class="modal-backdrop" id="partModal">
   <div class="modal" style="max-width:520px;">
@@ -558,9 +553,9 @@
 <!-- 6. GitHub 서버 연동 모달 -->
 <div class="modal-backdrop" id="githubModal">
   <div class="modal" style="max-width:520px;">
-    <h3>☁️ GitHub 서버 데이터 공유 설정(수정금지)</h3>
+    <h3>☁️ GitHub 서버 데이터 공유 설정</h3>
     <p>
-      ★관리자 외 임의수정 금지★GitHub Repository의 JSON 파일을 데이터베이스로 사용하여, <b>누구나 접속 시 동일한 최신 데이터를 조회하고 입력 즉시 GitHub 서버에 자동 저장</b>합니다.
+      GitHub Repository의 JSON 파일을 데이터베이스로 사용하여, <b>누구나 접속 시 동일한 최신 데이터를 조회하고 입력 즉시 GitHub 서버에 자동 저장</b>합니다.
     </p>
     <div class="form-group">
       <label>GitHub Owner (계정명 또는 조직명)</label>
@@ -592,6 +587,45 @@
       <div style="display:flex; gap:6px;">
         <button type="button" onclick="closeModal('githubModal')">닫기</button>
         <button type="button" class="btn-primary" onclick="saveGithubConfigAndSync()">연동 저장 및 동기화</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 7. 데이터 백업 복원 (Import) 모달 -->
+<div class="modal-backdrop" id="restoreModal">
+  <div class="modal" style="max-width:560px;">
+    <h3>📤 데이터 복원 및 외부 양식 불러오기 (Import)</h3>
+    <p style="margin-bottom:12px;">
+      백업해 둔 <b>JSON 파일</b>이나 사람이 Excel에서 편집하기 편한 <b>CSV 파일</b>을 업로드하여 데이터를 일괄 복원합니다.
+    </p>
+
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:14px; font-size:12px; line-height:1.6; color:#334155;">
+      💡 <b>Excel 편집 및 작성 요령 (CSV 표준 양식):</b><br/>
+      1. 아래 <b>[📋 Excel 표준양식 다운로드]</b>를 받아 Excel에서 편리하게 작성·수정하세요.<br/>
+      2. 열 순서: <code>PRC_Group, EQP_ID, Part_Name, Cycle, History_1, History_2, ...</code><br/>
+      3. 날짜 입력 예시: <code>26.10.17</code> 또는 세정 작업인 경우 <code>26.10.17(CLN)</code> (생략 시 교체로 처리)
+    </div>
+
+    <div class="form-group">
+      <label>복원 방식 선택</label>
+      <select id="restoreModeSelect">
+        <option value="OVERWRITE">🔄 기존 데이터 전체 교체 (덮어쓰기 - 권장)</option>
+        <option value="MERGE">➕ 기존 데이터 유지 + 새로운 이력만 병합 (Merge)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>백업 파일 선택 (.json 또는 .csv)</label>
+      <input type="file" id="restoreFileInput" accept=".json, .csv, .txt" style="padding:6px;" />
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button type="button" onclick="downloadCsvTemplate()">📋 빈 표준양식 다운로드</button>
+      <div style="display:flex; gap:6px;">
+        <button type="button" onclick="closeModal('restoreModal')">취소</button>
+        <button type="button" class="btn-primary" onclick="executeFileRestore()">복원 실행</button>
       </div>
     </div>
   </div>
@@ -1050,7 +1084,7 @@
             ${idx === 0 ? `
               <td class="eqp-id-cell" rowspan="${parts.length}">
                 <span class="prc-badge-tag">${escapeHtml(prcGroupStr)}</span><br/>
-                <span style="cursor:pointer;" title="클릭하여 PRC Group 수정" onclick="openManageEqpModal('${escEqp}')">${escEqp}</span>
+                <span style="cursor:pointer;" title="클릭하여 설비 정보 수정/관리" onclick="openEqpModal('MANAGE', '${escEqp}')">${escEqp}</span>
               </td>` : ''}
             <td class="part-cell">
               <div class="part-cell-inner">
@@ -1231,24 +1265,47 @@
     }
   }
 
-  // 1. EQP ID 추가 모달
-  function openEqpModal() {
+  // ==========================================
+  // 설비 등록 및 관리 통합 로직 (추가/수정/순서/삭제)
+  // ==========================================
+  let editingEqpId = null;
+
+  function openEqpModal(initialTab, targetEqpId) {
     document.getElementById('newEqpIdInput').value = '';
     document.getElementById('newEqpPrcInput').value = '';
-    
+
+    // 기존 PRC Group 채우기
     const prcs = getAllPrcGroups();
     const prcSelect = document.getElementById('newEqpPrcSelect');
     prcSelect.innerHTML = `<option value="">-- 기존 PRC 선택 --</option>` +
       prcs.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
+    editingEqpId = null;
+    switchEqpManageSubTab(initialTab === 'MANAGE' ? 'MANAGE' : 'ADD');
+
     document.getElementById('eqpModal').classList.add('show');
-    setTimeout(() => document.getElementById('newEqpIdInput').focus(), 50);
+    if (initialTab !== 'MANAGE') {
+      setTimeout(() => document.getElementById('newEqpIdInput').focus(), 50);
+    }
+  }
+
+  function switchEqpManageSubTab(subTab) {
+    const isAdd = subTab === 'ADD';
+    document.getElementById('eqpTabAddBtn').classList.toggle('active', isAdd);
+    document.getElementById('eqpTabManageBtn').classList.toggle('active', !isAdd);
+    document.getElementById('eqpAddPanel').style.display = isAdd ? 'block' : 'none';
+    document.getElementById('eqpManagePanel').style.display = isAdd ? 'none' : 'block';
+
+    if (!isAdd) {
+      renderEqpManageList();
+    }
   }
 
   function onSelectExistingPrc(val) {
     if (val) document.getElementById('newEqpPrcInput').value = val;
   }
 
+  // 신규 설비 추가
   function addEqpId() {
     const newId = document.getElementById('newEqpIdInput').value.trim().toUpperCase();
     let prcVal = document.getElementById('newEqpPrcInput').value.trim();
@@ -1269,64 +1326,163 @@
     selectedEqp = newId;
     closeModal('eqpModal');
     renderSelectors();
-    saveAndSync(`신규 설비 [${newId}] (PRC: ${prcVal})가 추가되었습니다.`);
+    saveAndSync(`신규 설비 [${newId}] (PRC: ${prcVal})가 등록되었습니다.`);
   }
 
-  // 2. 설비별 PRC Group 수정 및 관리 모달
-  function openManageEqpModal(targetEqpId) {
-    const allEqps = Object.keys(db.equipments);
-    if (allEqps.length === 0) return alert('등록된 설비가 없습니다.');
+  // 기존 설비 관리 목록 렌더링
+  function renderEqpManageList() {
+    const container = document.getElementById('eqpManageListContainer');
+    const eqpIds = Object.keys(db.equipments);
 
-    const target = targetEqpId || selectedEqp || allEqps[0];
-    const selectEl = document.getElementById('manageTargetEqp');
-    selectEl.innerHTML = allEqps.map(id =>
-      `<option value="${escapeHtml(id)}" ${id === target ? 'selected' : ''}>${escapeHtml(id)}</option>`
-    ).join('');
+    if (eqpIds.length === 0) {
+      container.innerHTML = '<div style="color:#94a3b8; font-size:12px; padding:10px; text-align:center;">등록된 설비가 없습니다.</div>';
+      return;
+    }
 
-    onManageTargetEqpChange(target);
-    renderManageEqpSummary();
-    document.getElementById('manageEqpModal').classList.add('show');
+    container.innerHTML = eqpIds.map((id, idx) => {
+      const eq = db.equipments[id];
+      const prc = eq.prcGroup || '미지정';
+      const safeId = id.replace(/'/g, "\\'");
+      const isFirst = idx === 0;
+      const isLast = idx === eqpIds.length - 1;
+      const isEditing = (editingEqpId === id);
+
+      if (isEditing) {
+        return `
+          <div class="part-inline-edit-box" style="background:#f0fdf4; border-color:#bbf7d0;">
+            <div style="font-size:11px; font-weight:800; color:#166534;">✏️ 설비 정보 수정: <b>${escapeHtml(id)}</b></div>
+            <div class="part-inline-edit-row">
+              <input type="text" id="inlineEditEqpId" value="${escapeHtml(id)}" placeholder="EQP ID (예: IAH3701)" style="flex:1; font-weight:800;" />
+              <input type="text" id="inlineEditEqpPrc" value="${escapeHtml(prc)}" placeholder="PRC Group (예: HC_Carbon_PH)" style="flex:1;" />
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:6px;">
+              <button type="button" onclick="cancelInlineEditEqp()" style="padding:4px 10px; font-size:11px;">취소</button>
+              <button type="button" class="btn-primary" onclick="saveInlineEditEqp('${safeId}')" style="padding:4px 12px; font-size:11px;">수정 저장</button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="part-del-item" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:6px;">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:800; color:#64748b; min-width:20px;">${idx + 1}.</span>
+            <span>🏢 <b>${escapeHtml(id)}</b> <span class="prc-badge-tag" style="margin-left:4px;">${escapeHtml(prc)}</span></span>
+          </span>
+          <div class="part-reorder-actions" style="display:inline-flex; align-items:center; gap:4px;">
+            <button type="button" class="part-edit-btn" title="설비명/PRC Group 수정" onclick="startInlineEditEqp('${safeId}')">수정</button>
+            <button type="button" class="part-order-btn" title="위로 이동" onclick="moveEqpOrder(${idx}, -1)" ${isFirst ? 'disabled' : ''}>▲</button>
+            <button type="button" class="part-order-btn" title="아래로 이동" onclick="moveEqpOrder(${idx}, 1)" ${isLast ? 'disabled' : ''}>▼</button>
+            <button type="button" class="part-del-btn" style="margin-left:4px;" onclick="deleteEqpDirect('${safeId}')">삭제</button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  function onManageTargetEqpChange(eqpId) {
-    const eq = db.equipments[eqpId];
-    document.getElementById('manageTargetPrcInput').value = (eq && eq.prcGroup) ? eq.prcGroup : '';
+  function startInlineEditEqp(eqpId) {
+    editingEqpId = eqpId;
+    renderEqpManageList();
+    setTimeout(() => {
+      const input = document.getElementById('inlineEditEqpId');
+      if (input) input.focus();
+    }, 50);
   }
 
-  function renderManageEqpSummary() {
-    const summaryEl = document.getElementById('manageEqpListSummary');
-    const allEqps = Object.keys(db.equipments);
-    summaryEl.innerHTML = allEqps.map(id => {
-      const prc = db.equipments[id].prcGroup || '미지정';
-      return `• <b>${escapeHtml(id)}</b> ➔ <span style="color:#2563eb; font-weight:700;">${escapeHtml(prc)}</span>`;
-    }).join('<br/>');
+  function cancelInlineEditEqp() {
+    editingEqpId = null;
+    renderEqpManageList();
   }
 
-  function saveEqpPrcChange() {
-    const eqpId = document.getElementById('manageTargetEqp').value;
-    const newPrc = document.getElementById('manageTargetPrcInput').value.trim();
+  // 설비명 및 PRC Group 수정 저장
+  function saveInlineEditEqp(oldId) {
+    const newId = (document.getElementById('inlineEditEqpId').value || '').trim().toUpperCase();
+    const newPrc = (document.getElementById('inlineEditEqpPrc').value || '').trim();
+
+    if (!newId) return alert('EQP ID를 입력해주세요.');
     if (!newPrc) return alert('PRC Group 명을 입력해주세요.');
 
-    if (db.equipments[eqpId]) {
-      db.equipments[eqpId].prcGroup = newPrc;
-      closeModal('manageEqpModal');
-      renderSelectors();
-      saveAndSync(`[${eqpId}] 설비의 PRC Group이 [${newPrc}]로 변경되었습니다.`);
+    if (newId !== oldId && db.equipments[newId]) {
+      return alert('이미 존재하는 EQP ID입니다. 다른 ID를 입력해주세요.');
     }
+
+    if (newId === oldId) {
+      db.equipments[oldId].prcGroup = newPrc;
+    } else {
+      // 키 변경 및 순서 보존 재구성
+      const newEquipments = {};
+      Object.keys(db.equipments).forEach(k => {
+        if (k === oldId) {
+          newEquipments[newId] = {
+            ...db.equipments[oldId],
+            prcGroup: newPrc
+          };
+        } else {
+          newEquipments[k] = db.equipments[k];
+        }
+      });
+      db.equipments = newEquipments;
+      if (selectedEqp === oldId) selectedEqp = newId;
+    }
+
+    editingEqpId = null;
+    renderEqpManageList();
+    renderSelectors();
+    saveAndSync(`[${newId}] 설비 정보(PRC: ${newPrc})가 수정되었습니다.`);
   }
 
-  function deleteSelectedEqp() {
-    const eqpId = document.getElementById('manageTargetEqp').value;
-    if (!confirm(`정말로 [${eqpId}] 설비 및 모든 부품 교체 이력을 삭제하시겠습니까?`)) return;
+  // 설비 순서 위/아래 이동
+  function moveEqpOrder(index, direction) {
+    const eqpIds = Object.keys(db.equipments);
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= eqpIds.length) return;
+
+    const movedId = eqpIds.splice(index, 1)[0];
+    eqpIds.splice(targetIndex, 0, movedId);
+
+    // db.equipments 객체를 새 키 순서대로 재구성
+    const reorderedEquipments = {};
+    eqpIds.forEach(id => {
+      reorderedEquipments[id] = db.equipments[id];
+    });
+    db.equipments = reorderedEquipments;
+
+    renderEqpManageList();
+    renderSelectors();
+    saveAndSync('설비 순서가 조정되었습니다.');
+  }
+
+  // 설비 전체 이름순(A-Z) 자동 정렬
+  function sortEquipmentsByName() {
+    const eqpIds = Object.keys(db.equipments).sort();
+    const sortedEquipments = {};
+    eqpIds.forEach(id => {
+      sortedEquipments[id] = db.equipments[id];
+    });
+    db.equipments = sortedEquipments;
+
+    renderEqpManageList();
+    renderSelectors();
+    saveAndSync('설비 목록이 이름순으로 자동 정렬되었습니다.');
+  }
+
+  // 설비 삭제
+  function deleteEqpDirect(eqpId) {
+    if (!confirm(`정말로 [${eqpId}] 설비 및 모든 부품 교체 이력을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+      return;
+    }
 
     delete db.equipments[eqpId];
     const remaining = Object.keys(db.equipments);
-    selectedEqp = remaining[0] || '';
-    closeModal('manageEqpModal');
+    if (selectedEqp === eqpId) {
+      selectedEqp = remaining[0] || '';
+    }
+
+    editingEqpId = null;
+    renderEqpManageList();
     renderSelectors();
     saveAndSync(`[${eqpId}] 설비가 삭제되었습니다.`);
   }
-
   // 3. 관리 부품 추가/삭제 모달 로직 (선택 PRC Group 적용 지원)
   function openPartModal() {
     document.getElementById('newPartNameInput').value = '';
@@ -1949,13 +2105,296 @@
     badge.textContent = text;
   }
 
+
+  // ==========================================
+  // 데이터 백업 및 복원 (JSON & Excel CSV)
+  // ==========================================
+
+  // 1. JSON 다운로드
   function exportJsonFile() {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `eqp_part_history_${getTodayFormatted()}.json`;
+    a.download = `P3D_EQP_History_Backup_${getTodayFormatted()}.json`;
     a.click();
   }
+
+  // 2. Excel(CSV) 백업 다운로드 (사람이 보기 가장 편한 표 형태)
+  function exportCsvFile() {
+    let maxCols = MIN_HISTORY_COLS;
+    Object.keys(db.equipments).forEach(eqpId => {
+      const eqp = db.equipments[eqpId];
+      (eqp.parts || []).forEach(p => {
+        const hist = (eqp.history && eqp.history[p]) ? eqp.history[p] : [];
+        if (hist.length > maxCols) maxCols = hist.length;
+      });
+    });
+
+    const headers = ['PRC_Group', 'EQP_ID', 'Part_Name', 'Cycle'];
+    for (let i = 1; i <= maxCols; i++) {
+      headers.push(`History_${i}`);
+    }
+
+    const rows = [headers.join(',')];
+
+    Object.keys(db.equipments).forEach(eqpId => {
+      const eqp = db.equipments[eqpId];
+      const prc = eqp.prcGroup || '';
+      (eqp.parts || []).forEach(p => {
+        const cycle = (db.partCycles && db.partCycles[p]) ? db.partCycles[p] : '';
+        const hist = (eqp.history && eqp.history[p]) ? eqp.history[p] : [];
+
+        const row = [
+          `"${prc.replace(/"/g, '""')}"`,
+          `"${eqpId.replace(/"/g, '""')}"`,
+          `"${p.replace(/"/g, '""')}"`,
+          `"${cycle.replace(/"/g, '""')}"`
+        ];
+
+        for (let i = 0; i < maxCols; i++) {
+          if (hist[i]) {
+            const tag = hist[i].type === 'CLEAN' ? '(CLN)' : '';
+            const cellVal = `${hist[i].date}${tag}`;
+            row.push(`"${cellVal}"`);
+          } else {
+            row.push('""');
+          }
+        }
+        rows.push(row.join(','));
+      });
+    });
+
+    // Excel 한글 깨짐 방지를 위한 UTF-8 BOM(\uFEFF) 추가
+    const csvContent = '\uFEFF' + rows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `P3D_EQP_History_${getTodayFormatted()}.csv`;
+    a.click();
+  }
+
+  // 3. Excel 표준양식(빈 템플릿) 다운로드
+  function downloadCsvTemplate() {
+    const headers = ['PRC_Group', 'EQP_ID', 'Part_Name', 'Cycle', 'History_1', 'History_2', 'History_3', 'History_4', 'History_5'];
+    const sampleRows = [
+      headers.join(','),
+      '"HC_Carbon_PH","IAH3701","AMU Graphite","6M","26.10.17","","","",""',
+      '"HC_Carbon_PH","IAH3701","SRA","3M","26.04.17","26.10.17","","",""',
+      '"HC_Carbon_PH","IAH3701","Stopper Housing","3M","26.04.17(CLN)","26.10.17","","",""',
+      '"LE","IAH3703","Quad Tube","6M","26.09.28","","","",""'
+    ];
+
+    const csvContent = '\uFEFF' + sampleRows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `P3D_EQP_History_Template.csv`;
+    a.click();
+  }
+
+  // 4. 복원 모달 열기
+  function openRestoreModal() {
+    document.getElementById('restoreFileInput').value = '';
+    document.getElementById('restoreModal').classList.add('show');
+  }
+
+  // 5. 복원 파일 파싱 및 실행
+  function executeFileRestore() {
+    const fileInput = document.getElementById('restoreFileInput');
+    const mode = document.getElementById('restoreModeSelect').value;
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+      return alert('복원할 백업 파일(.json 또는 .csv)을 선택해주세요.');
+    }
+
+    const file = fileInput.files[0];
+    const fileName = file.name.toLowerCase();
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      try {
+        const text = e.target.result;
+
+        if (fileName.endsWith('.json')) {
+          const parsed = JSON.parse(text);
+          if (!parsed || !parsed.equipments) {
+            throw new Error('유효한 설비 이력 JSON 파일이 아닙니다.');
+          }
+          applyRestoredDb(parsed, mode);
+
+        } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+          const parsedFromCsv = parseCsvToDb(text);
+          applyRestoredDb(parsedFromCsv, mode);
+
+        } else {
+          alert('지원하지 않는 파일 형식입니다. .json 또는 .csv 파일을 선택해주세요.');
+        }
+      } catch (err) {
+        alert('파일을 읽고 복원하는 중 오류가 발생했습니다: ' + err.message);
+      }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  // CSV 파서 (Excel 양식 -> DB 구조 자동 변환)
+  function parseCsvToDb(csvText) {
+    // 줄바꿈 정규화
+    const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length < 2) {
+      throw new Error('CSV 데이터에 내용이 없습니다.');
+    }
+
+    const newDb = {
+      updatedAt: new Date().toISOString(),
+      partsCatalog: [],
+      partCycles: {},
+      equipments: {}
+    };
+
+    // CSV 한 줄 파싱 (따옴표 지원)
+    function parseCsvLine(line) {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(cur.trim());
+          cur = '';
+        } else {
+          cur += char;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    const header = parseCsvLine(lines[0]);
+    // 2번째 줄부터 데이터 읽기
+    for (let l = 1; l < lines.length; l++) {
+      const cols = parseCsvLine(lines[l]);
+      if (cols.length < 3) continue;
+
+      const prcGroup = cols[0] || 'HC_Carbon_PH';
+      const eqpId = cols[1].toUpperCase();
+      const partName = cols[2];
+      const cycle = cols[3] || '';
+
+      if (!eqpId || !partName) continue;
+
+      // 1. partsCatalog 등록
+      if (!newDb.partsCatalog.includes(partName)) {
+        newDb.partsCatalog.push(partName);
+      }
+      // 2. partCycles 등록
+      if (cycle) {
+        newDb.partCycles[partName] = cycle.toUpperCase();
+      }
+
+      // 3. 설비 등록
+      if (!newDb.equipments[eqpId]) {
+        newDb.equipments[eqpId] = {
+          prcGroup: prcGroup,
+          parts: [],
+          history: {}
+        };
+      }
+      if (!newDb.equipments[eqpId].parts.includes(partName)) {
+        newDb.equipments[eqpId].parts.push(partName);
+      }
+      if (!newDb.equipments[eqpId].history[partName]) {
+        newDb.equipments[eqpId].history[partName] = [];
+      }
+
+      // 4. 이력 컬럼 파싱 (History_1, History_2...)
+      for (let c = 4; c < cols.length; c++) {
+        let val = cols[c];
+        if (!val) continue;
+
+        let workType = 'REPLACE';
+        if (val.toUpperCase().includes('(CLN)') || val.toUpperCase().includes('(CLEAN)')) {
+          workType = 'CLEAN';
+        }
+        // 날짜만 추출 (예: 26.10.17(CLN) -> 26.10.17)
+        const dateMatch = /(\d{2}\.\d{2}\.\d{2})/.exec(val);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          // 중복 없으면 추가
+          const exists = newDb.equipments[eqpId].history[partName].some(h => h.date === dateStr && h.type === workType);
+          if (!exists) {
+            newDb.equipments[eqpId].history[partName].push({
+              date: dateStr,
+              type: workType,
+              note: ''
+            });
+          }
+        }
+      }
+      sortHistoryList(newDb.equipments[eqpId].history[partName]);
+    }
+
+    return newDb;
+  }
+
+  // 복원 데이터 실제 적용 및 저장/동기화
+  function applyRestoredDb(importedDb, mode) {
+    if (mode === 'OVERWRITE') {
+      if (!confirm('정말로 기존 데이터를 모두 지우고 가져온 파일의 데이터로 완전히 교체하시겠습니까?')) {
+        return;
+      }
+      db = importedDb;
+    } else {
+      // MERGE (병합 모드)
+      (importedDb.partsCatalog || []).forEach(p => {
+        if (!db.partsCatalog.includes(p)) db.partsCatalog.push(p);
+      });
+      if (importedDb.partCycles) {
+        if (!db.partCycles) db.partCycles = {};
+        Object.keys(importedDb.partCycles).forEach(p => {
+          if (!db.partCycles[p]) db.partCycles[p] = importedDb.partCycles[p];
+        });
+      }
+      if (importedDb.equipments) {
+        Object.keys(importedDb.equipments).forEach(eqpId => {
+          const impEqp = importedDb.equipments[eqpId];
+          if (!db.equipments[eqpId]) {
+            db.equipments[eqpId] = impEqp;
+          } else {
+            // 설비 병합
+            if (impEqp.prcGroup) db.equipments[eqpId].prcGroup = impEqp.prcGroup;
+            (impEqp.parts || []).forEach(p => {
+              if (!db.equipments[eqpId].parts.includes(p)) db.equipments[eqpId].parts.push(p);
+              if (!db.equipments[eqpId].history[p]) db.equipments[eqpId].history[p] = [];
+              const impHist = (impEqp.history && impEqp.history[p]) ? impEqp.history[p] : [];
+              impHist.forEach(item => {
+                const dup = db.equipments[eqpId].history[p].some(h => h.date === item.date && h.type === item.type);
+                if (!dup) db.equipments[eqpId].history[p].push(item);
+              });
+              sortHistoryList(db.equipments[eqpId].history[p]);
+            });
+          }
+        });
+      }
+    }
+
+    // 현재 선택값 재보정
+    const allEqps = Object.keys(db.equipments);
+    if (!allEqps.includes(selectedEqp)) selectedEqp = allEqps[0] || '';
+    if (!db.partsCatalog.includes(selectedPart)) selectedPart = db.partsCatalog[0] || '';
+
+    closeModal('restoreModal');
+    renderSelectors();
+    saveAndSync('📥 데이터 복원(Import)이 완료되었으며 GitHub 서버에 자동 저장되었습니다.');
+  }
+
 
   let toastTimer = null;
   function showToast(msg) {
