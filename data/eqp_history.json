@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-10-17T14:58:23.137Z",
+  "updatedAt": "2026-10-17T14:58:31.269Z",
   "partsCatalog": [
-    "AMU Graphite",
     "TP1 Foreline&Trap Filter",
+    "AMU Graphite",
     "V2 VALVE",
     "SRA",
     "Beam Stoppper",
@@ -24,8 +24,8 @@
     "IAH3701": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -113,8 +113,8 @@
     "IAH3702": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -177,8 +177,8 @@
     "IAH3703": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -224,8 +224,8 @@
     "IAH3704": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -247,8 +247,8 @@
     "IAH3707": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -270,8 +270,8 @@
     "IAH3722": {
       "prcGroup": "HC_Carbon_PH",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -293,8 +293,8 @@
     "IAH3705": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -316,8 +316,8 @@
     "IAH3706": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -339,8 +339,8 @@
     "IAH3801": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -362,8 +362,8 @@
     "IAH3802": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -385,8 +385,8 @@
     "IAH3803_P1D": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -408,8 +408,8 @@
     "IAT3741": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -431,8 +431,8 @@
     "IAT3742": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -454,8 +454,8 @@
     "IAT3743": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -477,8 +477,8 @@
     "IAT3744": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -500,8 +500,8 @@
     "IAT3745": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -523,8 +523,8 @@
     "IAT3746": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -546,8 +546,8 @@
     "IAT3747": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -569,8 +569,8 @@
     "IAT3748": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -592,8 +592,8 @@
     "IAT3749": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -615,8 +615,8 @@
     "IAT3841": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -638,8 +638,8 @@
     "IAT3842": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -661,8 +661,8 @@
     "IAT3843_P2D": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
@@ -684,8 +684,8 @@
     "IAT3844_P1D": {
       "prcGroup": "LE",
       "parts": [
-        "AMU Graphite",
         "TP1 Foreline&Trap Filter",
+        "AMU Graphite",
         "V2 VALVE",
         "SRA",
         "Beam Stoppper",
