@@ -259,6 +259,17 @@
     }
     .part-del-btn:hover { background: #fecaca; }
 
+    .part-reorder-actions {
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .part-order-btn {
+      padding: 3px 8px; font-size: 11px; background: #e2e8f0; color: #1e293b;
+      border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-weight: 800;
+      line-height: 1.2;
+    }
+    .part-order-btn:hover:not(:disabled) { background: #cbd5e1; color: #000; }
+    .part-order-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff;
@@ -468,7 +479,7 @@
     <h3>⚙️ 관리 부품 추가 및 삭제 관리</h3>
     <div class="part-manage-tabs">
       <button type="button" class="pm-tab-btn active" id="pmTabAddBtn" onclick="switchPartManageSubTab('ADD')">➕ 부품 신규 추가</button>
-      <button type="button" class="pm-tab-btn" id="pmTabDelBtn" onclick="switchPartManageSubTab('DEL')">🗑️ 기존 부품 삭제</button>
+      <button type="button" class="pm-tab-btn" id="pmTabDelBtn" onclick="switchPartManageSubTab('DEL')">🔄 기존 부품 관리(삭제/순서조정)</button>
     </div>
 
     <!-- 5-1. 부품 신규 추가 패널 -->
@@ -520,7 +531,7 @@
         <select id="delPartTargetPrcSelect" onchange="renderDeletePartList()"></select>
       </div>
       <div class="form-group">
-        <label>삭제할 부품 선택 (목록):</label>
+        <label>부품 순서 조정 및 삭제 (목록):</label>
         <div id="deletePartListContainer" style="max-height:200px; overflow-y:auto; border:1px solid #e2e8f0; padding:6px; border-radius:8px; background:#fff;"></div>
       </div>
       <div class="modal-footer">
@@ -1420,14 +1431,16 @@
     if (scope === 'ALL') {
       partList = [...db.partsCatalog];
     } else if (scope === 'PRC') {
-      const set = new Set();
-      Object.keys(db.equipments).forEach(id => {
-        const eqp = db.equipments[id];
-        if ((eqp.prcGroup || '기타') === targetPrc && eqp.parts) {
-          eqp.parts.forEach(p => set.add(p));
-        }
-      });
-      partList = Array.from(set);
+      const targetEqps = Object.keys(db.equipments).filter(id => (db.equipments[id].prcGroup || '기타') === targetPrc);
+      if (targetEqps.length > 0) {
+        const baseParts = db.equipments[targetEqps[0]].parts || [];
+        const set = new Set();
+        targetEqps.forEach(id => {
+          (db.equipments[id].parts || []).forEach(p => set.add(p));
+        });
+        partList = baseParts.filter(p => set.has(p));
+        set.forEach(p => { if (!partList.includes(p)) partList.push(p); });
+      }
     } else {
       const eqp = db.equipments[selectedEqp];
       partList = (eqp && eqp.parts) ? [...eqp.parts] : [];
@@ -1438,16 +1451,71 @@
       return;
     }
 
-    container.innerHTML = partList.map(p => {
+    container.innerHTML = partList.map((p, idx) => {
       const cycle = (db.partCycles && db.partCycles[p]) ? ` (${db.partCycles[p]})` : '';
-      const safeP = p.replace(/'/g, "\'");
+      const safeP = p.replace(/'/g, "\\'");
+      const isFirst = idx === 0;
+      const isLast = idx === partList.length - 1;
       return `
-        <div class="part-del-item">
-          <span>⚙️ ${escapeHtml(p)} <span style="font-size:11px; color:#64748b;">${escapeHtml(cycle)}</span></span>
-          <button type="button" class="part-del-btn" onclick="executeDeletePart('${safeP}', '${scope}')">삭제</button>
+        <div class="part-del-item" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:6px;">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:800; color:#64748b; min-width:20px;">${idx + 1}.</span>
+            <span>⚙️ <b>${escapeHtml(p)}</b> <span style="font-size:11px; color:#64748b;">${escapeHtml(cycle)}</span></span>
+          </span>
+          <div class="part-reorder-actions" style="display:inline-flex; align-items:center; gap:4px;">
+            <button type="button" class="part-order-btn" title="위로 이동" onclick="movePartOrder(${idx}, -1, '${scope}')" ${isFirst ? 'disabled' : ''}>▲</button>
+            <button type="button" class="part-order-btn" title="아래로 이동" onclick="movePartOrder(${idx}, 1, '${scope}')" ${isLast ? 'disabled' : ''}>▼</button>
+            <button type="button" class="part-del-btn" style="margin-left:4px;" onclick="executeDeletePart('${safeP}', '${scope}')">삭제</button>
+          </div>
         </div>
       `;
     }).join('');
+  }
+
+  // 부품 순서 위/아래 이동 함수
+  function movePartOrder(index, direction, scope) {
+    const targetPrc = document.getElementById('delPartTargetPrcSelect').value;
+    const targetIndex = index + direction;
+
+    if (scope === 'ALL') {
+      if (targetIndex < 0 || targetIndex >= db.partsCatalog.length) return;
+      const movedItem = db.partsCatalog.splice(index, 1)[0];
+      db.partsCatalog.splice(targetIndex, 0, movedItem);
+
+      // 전체 설비의 parts 목록도 카탈로그 순서에 맞춰 재배열
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if (eqp.parts && eqp.parts.includes(movedItem)) {
+          eqp.parts.sort((a, b) => db.partsCatalog.indexOf(a) - db.partsCatalog.indexOf(b));
+        }
+      });
+
+    } else if (scope === 'PRC') {
+      const targetEqps = Object.keys(db.equipments).filter(id => (db.equipments[id].prcGroup || '기타') === targetPrc);
+      if (targetEqps.length === 0) return;
+
+      targetEqps.forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if (eqp && eqp.parts) {
+          if (index < eqp.parts.length && targetIndex >= 0 && targetIndex < eqp.parts.length) {
+            const item = eqp.parts.splice(index, 1)[0];
+            eqp.parts.splice(targetIndex, 0, item);
+          }
+        }
+      });
+
+    } else {
+      const eqp = db.equipments[selectedEqp];
+      if (eqp && eqp.parts) {
+        if (targetIndex < 0 || targetIndex >= eqp.parts.length) return;
+        const item = eqp.parts.splice(index, 1)[0];
+        eqp.parts.splice(targetIndex, 0, item);
+      }
+    }
+
+    renderDeletePartList();
+    renderSelectors();
+    saveAndSync('부품 순서가 조정되었습니다.');
   }
 
   // 부품 삭제 실행
@@ -1463,8 +1531,7 @@
       scopeLabel = `[${selectedEqp}] 설비`;
     }
 
-    if (!confirm(`정말로 ${scopeLabel}에서 '${partName}' 부품을 삭제하시겠습니까?
-해당 설비들에 기록된 교체/CLEAN 이력이 함께 삭제됩니다.`)) {
+    if (!confirm(`정말로 ${scopeLabel}에서 '${partName}' 부품을 삭제하시겠습니까?\n해당 설비들에 기록된 교체/CLEAN 이력이 함께 삭제됩니다.`)) {
       return;
     }
 
@@ -1496,14 +1563,12 @@
         }
       });
 
-      // 만약 전체 설비 중 이 부품을 쓰는 설비가 하나도 남지 않았다면 카탈로그에서도 자동 정리
       const isUsedElsewhere = Object.values(db.equipments).some(eq => eq.parts && eq.parts.includes(partName));
       if (!isUsedElsewhere) {
         db.partsCatalog = db.partsCatalog.filter(p => p !== partName);
       }
 
     } else {
-      // 현재 선택 설비만 제거
       const eqp = db.equipments[selectedEqp];
       if (eqp) {
         if (eqp.parts) {
