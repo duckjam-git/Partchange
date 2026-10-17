@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>설비 부품 교체/CLEAN 이력 관리 시스템</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #cbd5e1;
+      --border-dark: #334155;
+      --text: #0f172a;
+      --muted: #64748b;
+      --rep-bg: #eff6ff;
+      --rep-border: #93c5fd;
+      --rep-text: #1d4ed8;
+      --rep-badge: #2563eb;
+      --cln-bg: #ecfdf5;
+      --cln-border: #6ee7b7;
+      --cln-text: #047857;
+      --cln-badge: #059669;
+      --primary: #1e293b;
+      --accent: #2563eb;
+      --alert-red-bg: #fef2f2;
+      --alert-red-text: #b91c1c;
+      --alert-red-border: #fca5a5;
+      --alert-yellow-bg: #fefce8;
+      --alert-yellow-text: #854d0e;
+      --alert-yellow-border: #fde047;
+      --alert-green-bg: #f0fdf4;
+      --alert-green-text: #166534;
+      --alert-green-border: #bbf7d0;
+    }
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 1500px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--card); padding: 16px 24px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      flex-wrap: wrap; gap: 12px;
+    }
+    .header-title h1 { margin: 0; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .header-title p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .sync-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+    }
+    .sync-badge.online { background: #ecfdf5; color: #047857; border-color: #6ee7b7; }
+    .sync-badge.saving { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+    .sync-badge.error { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+
+    /* Buttons & Inputs */
+    button {
+      cursor: pointer; border: 1px solid var(--border); background: #fff;
+      padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      color: var(--text); transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    button:hover { background: #f1f5f9; }
+    button:active { transform: translateY(1px); }
+    button.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.btn-primary:hover { background: #1d4ed8; }
+    button.btn-dark { background: var(--primary); color: #fff; border-color: var(--primary); }
+    button.btn-dark:hover { background: #0f172a; }
+    button.btn-danger { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    button.btn-danger:hover { background: #fee2e2; }
+
+    input, select {
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; outline: none; background: #fff;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 12px 20px; font-size: 14px; font-weight: 700; border-radius: 10px;
+      background: #e2e8f0; border: none; color: #475569;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(15,23,42,0.15); }
+
+    /* Control Panel */
+    .panel {
+      background: var(--card); padding: 16px 20px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 14px;
+    }
+    .toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chip-list { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .chip {
+      padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      border: 1px solid var(--border); background: #f8fafc; cursor: pointer;
+    }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Mode Switch & Filter */
+    .mode-switch {
+      display: inline-flex; background: #f1f5f9; padding: 4px; border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .mode-btn {
+      border: none; background: transparent; padding: 6px 14px; border-radius: 7px;
+      font-size: 13px; font-weight: 700; color: #64748b;
+    }
+    .mode-btn.active-rep { background: var(--rep-badge); color: #fff; }
+    .mode-btn.active-cln { background: var(--cln-badge); color: #fff; }
+
+    .filter-switch {
+      display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .filter-btn {
+      border: none; background: transparent; padding: 5px 10px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; color: #64748b;
+    }
+    .filter-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+    /* Excel-like History Table */
+    .table-wrap {
+      background: var(--card); border-radius: 12px; border: 1px solid var(--border);
+      overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    table.history-table {
+      width: 100%; border-collapse: collapse; min-width: 1150px;
+    }
+    table.history-table th, table.history-table td {
+      border: 1px solid #334155; padding: 0; text-align: center; height: 42px;
+      font-size: 14px;
+    }
+    table.history-table thead th {
+      background: #f8fafc; font-weight: 700; color: #0f172a; height: 40px;
+    }
+    .eqp-id-cell {
+      font-weight: 800; font-size: 16px; width: 120px; background: #ffffff;
+      vertical-align: middle; letter-spacing: 0.3px;
+    }
+    .part-cell {
+      width: 320px; background: #ffffff; padding: 0 10px !important; text-align: left;
+    }
+    .part-cell-inner {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 100%;
+    }
+    .part-info-area { display: flex; flex-direction: column; justify-content: center; gap: 2px; flex: 1; }
+    .part-name-btn {
+      font-weight: 700; cursor: pointer; font-size: 13px; color: #0f172a;
+      display: inline-flex; align-items: center; gap: 6px; user-select: none;
+    }
+    .part-name-btn:hover { color: var(--accent); text-decoration: underline; }
+    
+    .cycle-status-badge {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
+      padding: 1px 6px; border-radius: 4px; width: fit-content; border: 1px solid transparent;
+    }
+    .cycle-status-badge.status-expired { background: var(--alert-red-bg); color: var(--alert-red-text); border-color: var(--alert-red-border); }
+    .cycle-status-badge.status-warn { background: var(--alert-yellow-bg); color: var(--alert-yellow-text); border-color: var(--alert-yellow-border); }
+    .cycle-status-badge.status-normal { background: var(--alert-green-bg); color: var(--alert-green-text); border-color: var(--alert-green-border); }
+    .cycle-status-badge.status-none { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+
+    .quick-actions { display: flex; gap: 3px; opacity: 0.9; }
+    .q-btn {
+      padding: 3px 6px; font-size: 10px; font-weight: 800; border-radius: 4px;
+      border: 1px solid transparent; cursor: pointer;
+    }
+    .q-btn.rep { background: var(--rep-bg); color: var(--rep-text); border-color: var(--rep-border); }
+    .q-btn.rep:hover { background: var(--rep-badge); color: #fff; }
+    .q-btn.cln { background: var(--cln-bg); color: var(--cln-text); border-color: var(--cln-border); }
+    .q-btn.cln:hover { background: var(--cln-badge); color: #fff; }
+
+    /* History Date Cells */
+    .date-cell {
+      min-width: 96px; width: 96px; cursor: pointer; position: relative;
+      transition: all 0.12s; padding: 4px 6px !important;
+    }
+    .date-cell:hover { background: #f8fafc; }
+    .date-cell.type-REPLACE { background: var(--rep-bg); color: var(--rep-text); font-weight: 700; }
+    .date-cell.type-CLEAN { background: var(--cln-bg); color: var(--cln-text); font-weight: 700; }
+    .date-cell.empty-cell:hover::after {
+      content: "+ 직접입력"; font-size: 11px; color: #94a3b8; font-weight: 500;
+    }
+    .cell-badge {
+      display: inline-block; font-size: 9px; font-weight: 800; padding: 1px 4px;
+      border-radius: 3px; margin-right: 4px; vertical-align: middle; color: #fff;
+    }
+    .cell-badge.REPLACE { background: var(--rep-badge); }
+    .cell-badge.CLEAN { background: var(--cln-badge); }
+    .cell-date-text { vertical-align: middle; font-size: 13px; letter-spacing: -0.2px; }
+
+    /* Legend */
+    .legend-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--muted); flex-wrap: wrap; gap: 10px;
+    }
+    .legend-items { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .legend-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text); }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.45);
+      display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      background: #fff; border-radius: 14px; width: 100%; max-width: 480px;
+      padding: 22px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+    }
+    .modal h3 { margin: 0 0 12px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+    .modal p { margin: 0 0 16px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #334155; }
+    .form-group input, .form-group select { width: 100%; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff;
+      padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s; transform: translateY(10px); z-index: 2000;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 상단 헤더 -->
+  <div class="header">
+    <div class="header-title">
+      <h1>
+        🛠️ 설비 부품 교체 / CLEAN 이력 관리 시스템
+        <span id="syncStatusBadge" class="sync-badge">💾 로컬 저장 모드</span>
+      </h1>
+      <p>부품명 클릭 시 오늘 날짜 자동 입력 · 교체주기 D/M/Y 자동 카운트 및 잔여일수 알림 · GitHub 서버 연동 지원</p>
+    </div>
+    <div class="header-actions">
+      <button onclick="openEqpModal()">➕ EQP ID 추가</button>
+      <button onclick="openPartModal()">➕ 관리 부품 추가</button>
+      <button onclick="pullFromGitHub(true)" id="btnRefreshGithub" style="display:none;">🔄 서버 새로고침</button>
+      <button class="btn-dark" onclick="openGithubModal()">☁️ GitHub 서버 연동 설정</button>
+    </div>
+  </div>
+
+  <!-- 탭 전환 -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBtnEqp" onclick="switchTab('EQP')">
+      📋 1. 설비별(EQP ID) 부품 교체/CLEAN 이력 조회 및 기록
+    </button>
+    <button class="tab-btn" id="tabBtnPart" onclick="switchTab('PART')">
+      🔍 2. 부품별 전체 설비(EQP ID) 이력 비교 조회
+    </button>
+  </div>
+
+  <!-- 컨트롤 패널 -->
+  <div class="panel">
+    <div class="toolbar">
+      <!-- 좌측: 설비 또는 부품 조회 -->
+      <div class="toolbar-group" id="eqpSearchGroup">
+        <label style="font-size:13px; font-weight:800;">설비(EQP ID) 조회:</label>
+        <select id="eqpSelect" onchange="onSelectEqp(this.value)" style="min-width:150px; font-weight:700;"></select>
+        <input type="text" id="eqpSearchInput" placeholder="EQP ID 검색 (예: IAH3701)" oninput="onSearchEqpInput(this.value)" style="width:180px;" />
+      </div>
+
+      <div class="toolbar-group" id="partSearchGroup" style="display:none;">
+        <label style="font-size:13px; font-weight:800;">부품명 조회:</label>
+        <select id="partSelect" onchange="onSelectPart(this.value)" style="min-width:200px; font-weight:700;"></select>
+        <input type="text" id="partSearchInput" placeholder="부품명 검색 (예: SRA, Quad)" oninput="onSearchPartInput(this.value)" style="width:200px;" />
+      </div>
+
+      <!-- 우측: 클릭 시 기본 작업 모드 & 필터 -->
+      <div class="toolbar-group">
+        <span style="font-size:12px; font-weight:700; color:#475569;">부품명 클릭 시 자동 기록 모드:</span>
+        <div class="mode-switch">
+          <button class="mode-btn active-rep" id="modeBtnREP" onclick="setWorkMode('REPLACE')">🔧 교체 (REPLACE)</button>
+          <button class="mode-btn" id="modeBtnCLN" onclick="setWorkMode('CLEAN')">✨ 세정 (CLEAN)</button>
+        </div>
+
+        <span style="font-size:12px; font-weight:700; color:#475569; margin-left:8px;">표시 필터:</span>
+        <div class="filter-switch">
+          <button class="filter-btn active" id="filterALL" onclick="setFilterMode('ALL')">전체</button>
+          <button class="filter-btn" id="filterREP" onclick="setFilterMode('REPLACE')">교체만</button>
+          <button class="filter-btn" id="filterCLN" onclick="setFilterMode('CLEAN')">CLEAN만</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 빠른 선택 칩 -->
+    <div class="chip-list" id="quickChips"></div>
+  </div>
+
+  <!-- 메인 표 영역 -->
+  <div class="table-wrap">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th id="thCol1" style="width:120px;">EQP ID</th>
+          <th id="thCol2" style="width:320px;">부품 (교체주기 및 잔여일수)</th>
+          <th id="thHistory" colspan="9">교체이력</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="legend-bar">
+      <div class="legend-items">
+        <span class="legend-dot"><span class="cell-badge REPLACE">교체</span> 신규 교체</span>
+        <span class="legend-dot"><span class="cell-badge CLEAN">CLEAN</span> 세정</span>
+        <span class="legend-dot"><span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-size:11px;">🔴 교체기한 초과</span></span>
+        <span class="legend-dot"><span style="background:#fefce8; color:#854d0e; padding:2px 6px; border-radius:4px; font-size:11px;">🟡 교체 임박(7일 이내)</span></span>
+        <span>💡 <b>부품명 클릭:</b> 오늘 날짜 자동 입력 | <b>날짜 셀 클릭:</b> 수동 수정/삭제</span>
+      </div>
+      <div>
+        <button onclick="exportJsonFile()" style="padding:5px 10px; font-size:12px;">📥 JSON 백업 다운로드</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. 중복 입력 알림 모달 -->
+<div class="modal-backdrop" id="alertModal">
+  <div class="modal">
+    <h3>⚠️ 중복 입력 알림</h3>
+    <p id="alertModalMsg" style="font-size:14px; color:#0f172a; font-weight:600;"></p>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="closeModal('alertModal')">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. 날짜 및 작업유형 수동 수정/입력 모달 -->
+<div class="modal-backdrop" id="editCellModal">
+  <div class="modal">
+    <h3 id="editModalTitle">📅 이력 날짜 수동 수정</h3>
+    <p id="editModalSub"></p>
+    <div class="form-group">
+      <label>작업 구분 (교체 / CLEAN)</label>
+      <select id="editWorkType">
+        <option value="REPLACE">🔧 교체 (REPLACE)</option>
+        <option value="CLEAN">✨ 세정 (CLEAN)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>날짜 선택 (달력)</label>
+      <input type="date" id="editDatePicker" onchange="syncPickerToText(this.value)" />
+    </div>
+    <div class="form-group">
+      <label>표기 날짜 직접 수정 (YY.MM.DD 형식)</label>
+      <input type="text" id="editDateText" placeholder="예: 26.10.17" />
+    </div>
+    <div class="form-group">
+      <label>비고 / 작업 메모 (선택)</label>
+      <input type="text" id="editNoteText" placeholder="예: PM 정기교체 등" />
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="btnDeleteRecord" onclick="deleteHistoryRecord()">🗑️ 이력 삭제</button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="closeModal('editCellModal')">취소</button>
+        <button class="btn-primary" onclick="saveHistoryRecord()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. EQP ID 추가 모달 -->
+<div class="modal-backdrop" id="eqpModal">
+  <div class="modal">
+    <h3>➕ 신규 설비 (EQP ID) 추가</h3>
+    <p>새로운 설비 ID를 등록하면 기본 관리 부품 목록이 자동으로 연결됩니다.</p>
+    <div class="form-group">
+      <label>EQP ID 입력</label>
+      <input type="text" id="newEqpIdInput" placeholder="예: IAH3704" onkeydown="if(event.key==='Enter') addEqpId()" />
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('eqpModal')">취소</button>
+      <button class="btn-primary" onclick="addEqpId()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 부품명 추가 모달 (교체주기 D/M/Y 지원) -->
+<div class="modal-backdrop" id="partModal">
+  <div class="modal">
+    <h3>➕ 관리 부품 및 교체주기 추가</h3>
+    <p>교체주기는 숫자 뒤에 단위(<b>D, M, Y</b>)를 붙여서 입력하세요. (예: 30D, 3M, 1Y)</p>
+    <div class="form-group">
+      <label>부품명 입력</label>
+      <input type="text" id="newPartNameInput" placeholder="예: Source Head, Liner Set" onkeydown="if(event.key==='Enter') document.getElementById('newPartCycleInput').focus()" />
+    </div>
+    <div class="form-group">
+      <label>교체주기 입력 (선택, 빈칸 가능)</label>
+      <input type="text" id="newPartCycleInput" placeholder="예: 30D, 3M, 6M, 1Y 등" onkeydown="if(event.key==='Enter') addPartName()" />
+      <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;">
+        * D(일): 30D (30일) / M(개월): 1M(30일), 3M(90일), 6M(180일) / Y(년): 1Y(365일)
+      </span>
+    </div>
+    <div class="form-group">
+      <label>적용 범위</label>
+      <select id="newPartScope">
+        <option value="ALL">전체 설비(EQP ID)에 공통 추가</option>
+        <option value="CURRENT">현재 선택된 설비에만 추가</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('partModal')">취소</button>
+      <button class="btn-primary" onclick="addPartName()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 5. GitHub 서버 연동 모달 -->
+<div class="modal-backdrop" id="githubModal">
+  <div class="modal" style="max-width:520px;">
+    <h3>☁️ GitHub 서버 데이터 공유 설정</h3>
+    <p>
+      GitHub Repository의 JSON 파일을 데이터베이스로 사용하여, <b>누구나 접속 시 동일한 최신 데이터를 조회하고 입력 즉시 GitHub 서버에 자동 저장</b>합니다.
+    </p>
+    <div class="form-group">
+      <label>GitHub Owner (계정명 또는 조직명)</label>
+      <input type="text" id="ghOwner" placeholder="예: eunmin-choi" />
+    </div>
+    <div class="form-group">
+      <label>Repository 이름</label>
+      <input type="text" id="ghRepo" placeholder="예: eqp-part-history" />
+    </div>
+    <div class="form-group">
+      <label>Branch & 데이터 파일 경로</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="ghBranch" placeholder="main" value="main" style="width:35%;" />
+        <input type="text" id="ghPath" placeholder="data/eqp_history.json" value="data/eqp_history.json" style="width:65%;" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Personal Access Token (classic `repo` 권한 또는 Fine-grained `Contents: Read & Write`)</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    </div>
+    <div style="background:#f8fafc; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:12px; color:#475569; margin-bottom:12px;">
+      💡 <b>팀원 공유 팁:</b> 아래 <b>[팀원 공유용 링크 복사]</b>를 누르면 설정 정보가 포함된 접속 URL이 복사되어, 동료가 링크로 접속만 해도 동일한 GitHub DB에 바로 연결됩니다.
+    </div>
+    <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap;">
+      <button onclick="copyShareableUrl()">🔗 팀원 공유용 링크 복사</button>
+      <div style="display:flex; gap:6px;">
+        <button onclick="closeModal('githubModal')">닫기</button>
+        <button class="btn-primary" onclick="saveGithubConfigAndSync()">연동 저장 및 동기화</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastMsg"></div>
+
+<script>
+  const STORAGE_KEY = 'EQP_PART_HISTORY_DB_V5';
+  const GH_CONFIG_KEY = 'EQP_GITHUB_CONFIG_V5';
+  const MIN_HISTORY_COLS = 9;
+
+  let memoryFallback = {};
+  const SafeStorage = {
+    getItem(key) {
+      try { return window.localStorage.getItem(key); }
+      catch (e) { return memoryFallback[key] || null; }
+    },
+    setItem(key, val) {
+      try { window.localStorage.setItem(key, val); }
+      catch (e) { memoryFallback[key] = val; }
+    }
+  };
+
+  const DEFAULT_DB = {
+    updatedAt: new Date().toISOString(),
+    partsCatalog: [
+      "AMU Graphite",
+      "SRA",
+      "Beam Stoppper",
+      "Stopper Housing",
+      "Quad Tube",
+      "Scanner"
+    ],
+    partCycles: {
+      "AMU Graphite": "6M",
+      "SRA": "3M",
+      "Beam Stoppper": "6M",
+      "Stopper Housing": "3M",
+      "Quad Tube": "6M",
+      "Scanner": "1Y"
+    },
+    equipments: {
+      "IAH3701": {
+        parts: [
+          "AMU Graphite",
+          "SRA",
+          "Beam Stoppper",
+          "Stopper Housing",
+          "Quad Tube",
+          "Scanner"
+        ],
+        history: {
+          "AMU Graphite": [
+            { date: "26.10.17", type: "REPLACE", note: "정기 교체" }
+          ],
+          "SRA": [
+            { date: "26.04.17", type: "REPLACE", note: "" },
+            { date: "26.10.17", type: "REPLACE", note: "" }
+          ],
+          "Beam Stoppper": [
+            { date: "26.04.17", type: "REPLACE", note: "" },
+            { date: "26.10.17", type: "REPLACE", note: "" }
+          ],
+          "Stopper Housing": [
+            { date: "26.04.17", type: "CLEAN", note: "세정 후 재장착" },
+            { date: "26.10.17", type: "REPLACE", note: "" }
+          ],
+          "Quad Tube": [
+            { date: "26.08.17", type: "CLEAN", note: "내부 크리닝" },
+            { date: "26.10.17", type: "REPLACE", note: "" }
+          ],
+          "Scanner": [
+            { date: "25.10.17", type: "REPLACE", note: "" }
+          ]
+        }
+      },
+      "IAH3702": {
+        parts: [
+          "AMU Graphite",
+          "SRA",
+          "Beam Stoppper",
+          "Stopper Housing",
+          "Quad Tube",
+          "Scanner"
+        ],
+        history: {
+          "AMU Graphite": [{ date: "26.08.12", type: "REPLACE", note: "" }],
+          "SRA": [{ date: "26.05.20", type: "CLEAN", note: "" }, { date: "26.09.15", type: "REPLACE", note: "" }],
+          "Beam Stoppper": [{ date: "26.06.01", type: "REPLACE", note: "" }],
+          "Stopper Housing": [{ date: "26.06.01", type: "CLEAN", note: "" }],
+          "Quad Tube": [{ date: "26.07.19", type: "REPLACE", note: "" }],
+          "Scanner": [{ date: "26.01.10", type: "REPLACE", note: "" }]
+        }
+      },
+      "IAH3703": {
+        parts: [
+          "AMU Graphite",
+          "SRA",
+          "Beam Stoppper",
+          "Stopper Housing",
+          "Quad Tube",
+          "Scanner"
+        ],
+        history: {
+          "AMU Graphite": [{ date: "26.09.03", type: "CLEAN", note: "" }],
+          "SRA": [{ date: "26.03.11", type: "REPLACE", note: "" }],
+          "Beam Stoppper": [],
+          "Stopper Housing": [],
+          "Quad Tube": [{ date: "26.09.28", type: "REPLACE", note: "" }],
+          "Scanner": [{ date: "26.04.05", type: "REPLACE", note: "" }]
+        }
+      }
+    }
+  };
+
+  let db = loadLocalDb();
+  let currentTab = 'EQP';
+  let selectedEqp = Object.keys(db.equipments)[0] || 'IAH3701';
+  let selectedPart = db.partsCatalog[0] || 'AMU Graphite';
+  let currentWorkMode = 'REPLACE';
+  let currentFilterMode = 'ALL';
+  let editingContext = null;
+  let githubFileSha = null;
+
+  function parseCycleToDays(cycleStr) {
+    if (!cycleStr) return null;
+    const clean = cycleStr.trim().toUpperCase();
+    const match = /^(\d+)([DMY])$/.exec(clean);
+    if (!match) return null;
+    const val = parseInt(match[1], 10);
+    const unit = match[2];
+    if (unit === 'D') return val;
+    if (unit === 'M') return val * 30;
+    if (unit === 'Y') return val * 365;
+    return null;
+  }
+
+  function parseYyMmDdToDate(dateStr) {
+    const m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec((dateStr || '').trim());
+    if (!m) return null;
+    const y = 2000 + parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10) - 1;
+    const d = parseInt(m[3], 10);
+    return new Date(y, mo, d);
+  }
+
+  function getDaysBetween(fromDate, targetDate) {
+    const oneDay = 24 * 60 * 60 * 1000;
+    return Math.round((targetDate - fromDate) / oneDay);
+  }
+
+  function getPartCycleStatus(eqpId, partName) {
+    const cycleStr = (db.partCycles && db.partCycles[partName]) || '';
+    const cycleDays = parseCycleToDays(cycleStr);
+    if (cycleDays === null) return { text: cycleStr ? `주기: ${cycleStr}` : '주기 미설정', status: 'none' };
+
+    const eqp = db.equipments[eqpId];
+    if (!eqp || !eqp.history || !eqp.history[partName] || eqp.history[partName].length === 0) {
+      return { text: `주기 ${cycleStr} | 이력 없음`, status: 'none' };
+    }
+
+    const list = eqp.history[partName];
+    const lastRecord = list[list.length - 1];
+    const lastDate = parseYyMmDdToDate(lastRecord.date);
+    if (!lastDate) return { text: `주기 ${cycleStr}`, status: 'none' };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const elapsedDays = getDaysBetween(lastDate, today);
+    const remainingDays = cycleDays - elapsedDays;
+
+    let status = 'normal';
+    let label = '';
+
+    if (remainingDays < 0) {
+      status = 'expired';
+      label = `🔴 초과: D+${Math.abs(remainingDays)}일 (주기 ${cycleStr})`;
+    } else if (remainingDays <= 7) {
+      status = 'warn';
+      label = `🟡 임박: 잔여 ${remainingDays}일 (주기 ${cycleStr})`;
+    } else {
+      status = 'normal';
+      label = `🟢 정상: 잔여 ${remainingDays}일 (주기 ${cycleStr})`;
+    }
+
+    return { text: label, status: status };
+  }
+
+  function getTodayFormatted() {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yy}.${mm}.${dd}`;
+  }
+
+  function yyMmDdToIso(dateStr) {
+    const m = /^(\d{2})\.(\d{2})\.(\d{2})$/.exec((dateStr || '').trim());
+    if (!m) return '';
+    return `20${m[1]}-${m[2]}-${m[3]}`;
+  }
+
+  function isoToYyMmDd(isoStr) {
+    const m = /^\d{2}(\d{2})-(\d{2})-(\d{2})$/.exec((isoStr || '').trim());
+    if (!m) return '';
+    return `${m[1]}.${m[2]}.${m[3]}`;
+  }
+
+  function sortHistoryList(list) {
+    list.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  }
+
+  function loadLocalDb() {
+    try {
+      const raw = SafeStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.equipments) {
+          if (!parsed.partCycles) parsed.partCycles = {};
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_DB));
+  }
+
+  function saveLocalDb() {
+    db.updatedAt = new Date().toISOString();
+    SafeStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  }
+
+  // 초기화
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('todayLabel').textContent = getTodayFormatted();
+    checkUrlGithubParams();
+    renderSelectors();
+    renderMainTable();
+    initGithubAutoSync();
+  });
+
+  // 탭 전환
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabBtnEqp').classList.toggle('active', tab === 'EQP');
+    document.getElementById('tabBtnPart').classList.toggle('active', tab === 'PART');
+    document.getElementById('eqpSearchGroup').style.display = tab === 'EQP' ? 'flex' : 'none';
+    document.getElementById('partSearchGroup').style.display = tab === 'PART' ? 'flex' : 'none';
+    renderSelectors();
+    renderMainTable();
+  }
+
+  function setWorkMode(mode) {
+    currentWorkMode = mode;
+    document.getElementById('modeBtnREP').className = 'mode-btn' + (mode === 'REPLACE' ? ' active-rep' : '');
+    document.getElementById('modeBtnCLN').className = 'mode-btn' + (mode === 'CLEAN' ? ' active-cln' : '');
+    showToast(`클릭 시 기본 기록 모드가 [${mode === 'REPLACE' ? '🔧 교체' : '✨ CLEAN'}]으로 변경되었습니다.`);
+  }
+
+  function setFilterMode(filter) {
+    currentFilterMode = filter;
+    document.getElementById('filterALL').classList.toggle('active', filter === 'ALL');
+    document.getElementById('filterREP').classList.toggle('active', filter === 'REPLACE');
+    document.getElementById('filterCLN').classList.toggle('active', filter === 'CLEAN');
+    renderMainTable();
+  }
+
+  function renderSelectors() {
+    const eqpIds = Object.keys(db.equipments);
+    if (!eqpIds.includes(selectedEqp)) selectedEqp = eqpIds[0] || '';
+    if (!db.partsCatalog.includes(selectedPart)) selectedPart = db.partsCatalog[0] || '';
+
+    const eqpSelect = document.getElementById('eqpSelect');
+    eqpSelect.innerHTML = eqpIds.map(id =>
+      `<option value="${escapeHtml(id)}" ${id === selectedEqp ? 'selected' : ''}>${escapeHtml(id)}</option>`
+    ).join('');
+
+    const partSelect = document.getElementById('partSelect');
+    partSelect.innerHTML = db.partsCatalog.map(p =>
+      `<option value="${escapeHtml(p)}" ${p === selectedPart ? 'selected' : ''}>${escapeHtml(p)}</option>`
+    ).join('');
+
+    const chipContainer = document.getElementById('quickChips');
+    if (currentTab === 'EQP') {
+      chipContainer.innerHTML = eqpIds.map(id =>
+        `<span class="chip ${id === selectedEqp ? 'active' : ''}" onclick="onSelectEqp('${escapeHtml(id)}')">${escapeHtml(id)}</span>`
+      ).join('');
+    } else {
+      chipContainer.innerHTML = db.partsCatalog.map(p =>
+        `<span class="chip ${p === selectedPart ? 'active' : ''}" onclick="onSelectPart('${escapeHtml(p).replace(/'/g, "\'")}')">${escapeHtml(p)}</span>`
+      ).join('');
+    }
+  }
+
+  function onSelectEqp(eqpId) {
+    selectedEqp = eqpId;
+    renderSelectors();
+    renderMainTable();
+  }
+
+  function onSearchEqpInput(val) {
+    const q = val.trim().toUpperCase();
+    if (!q) return;
+    const match = Object.keys(db.equipments).find(id => id.toUpperCase().includes(q));
+    if (match) {
+      selectedEqp = match;
+      renderSelectors();
+      renderMainTable();
+    }
+  }
+
+  function onSelectPart(partName) {
+    selectedPart = partName;
+    renderSelectors();
+    renderMainTable();
+  }
+
+  function onSearchPartInput(val) {
+    const q = val.trim().toLowerCase();
+    if (!q) return;
+    const match = db.partsCatalog.find(p => p.toLowerCase().includes(q));
+    if (match) {
+      selectedPart = match;
+      renderSelectors();
+      renderMainTable();
+    }
+  }
+
+  function getFilteredHistory(eqpId, partName) {
+    const eqp = db.equipments[eqpId];
+    if (!eqp || !eqp.history) return [];
+    if (!eqp.history[partName]) eqp.history[partName] = [];
+    const rawList = eqp.history[partName];
+    return rawList
+      .map((item, idx) => ({ ...item, _origIdx: idx }))
+      .filter(item => currentFilterMode === 'ALL' || item.type === currentFilterMode);
+  }
+
+  function renderMainTable() {
+    const tbody = document.getElementById('tableBody');
+    const thCol1 = document.getElementById('thCol1');
+    const thCol2 = document.getElementById('thCol2');
+    const thHistory = document.getElementById('thHistory');
+
+    if (currentTab === 'EQP') {
+      thCol1.textContent = 'EQP ID';
+      thCol2.textContent = '부품 (교체주기 및 잔여일수)';
+      const eqpObj = db.equipments[selectedEqp];
+      if (!eqpObj) {
+        tbody.innerHTML = `<tr><td colspan="11">설비 데이터가 없습니다.</td></tr>`;
+        return;
+      }
+
+      const parts = eqpObj.parts || [];
+      let maxHistoryLen = MIN_HISTORY_COLS;
+      parts.forEach(part => {
+        const list = getFilteredHistory(selectedEqp, part);
+        if (list.length + 1 > maxHistoryLen) maxHistoryLen = list.length + 1;
+      });
+      thHistory.setAttribute('colspan', maxHistoryLen);
+
+      let rowsHtml = '';
+      parts.forEach((partName, idx) => {
+        const filteredRecords = getFilteredHistory(selectedEqp, partName);
+        const escEqp = escapeHtml(selectedEqp);
+        const escPart = escapeHtml(partName);
+        const safePart = partName.replace(/'/g, "\'");
+        const cycleInfo = getPartCycleStatus(selectedEqp, partName);
+
+        let cellsHtml = '';
+        for (let c = 0; c < maxHistoryLen; c++) {
+          const item = filteredRecords[c];
+          if (item) {
+            const badgeLabel = item.type === 'CLEAN' ? 'CLEAN' : '교체';
+            const titleTip = `[${badgeLabel}] ${item.date}${item.note ? ' - ' + item.note : ''} (클릭하여 수정)`;
+            cellsHtml += `
+              <td class="date-cell type-${escapeHtml(item.type)}" title="${escapeHtml(titleTip)}"
+                  onclick="openEditCellModal('${escEqp}', '${safePart}', ${item._origIdx})">
+                <span class="cell-badge ${escapeHtml(item.type)}">${badgeLabel}</span>
+                <span class="cell-date-text">${escapeHtml(item.date)}</span>
+              </td>`;
+          } else {
+            cellsHtml += `
+              <td class="date-cell empty-cell" title="클릭하여 날짜 수동 추가"
+                  onclick="openEditCellModal('${escEqp}', '${safePart}', -1)"></td>`;
+          }
+        }
+
+        rowsHtml += `
+          <tr>
+            ${idx === 0 ? `<td class="eqp-id-cell" rowspan="${parts.length}">${escEqp}</td>` : ''}
+            <td class="part-cell">
+              <div class="part-cell-inner">
+                <div class="part-info-area">
+                  <div class="part-name-btn" title="클릭 시 오늘 날짜(${getTodayFormatted()}) 자동 기록"
+                       onclick="recordTodayQuick('${escEqp}', '${safePart}', currentWorkMode)">
+                    <span>${escPart}</span>
+                  </div>
+                  <span class="cycle-status-badge status-${cycleInfo.status}">${cycleInfo.text}</span>
+                </div>
+                <div class="quick-actions">
+                  <button type="button" class="q-btn rep" title="오늘 날짜로 [교체] 즉시 기록"
+                          onclick="recordTodayQuick('${escEqp}', '${safePart}', 'REPLACE')">교체</button>
+                  <button type="button" class="q-btn cln" title="오늘 날짜로 [CLEAN] 즉시 기록"
+                          onclick="recordTodayQuick('${escEqp}', '${safePart}', 'CLEAN')">CLEAN</button>
+                </div>
+              </div>
+            </td>
+            ${cellsHtml}
+          </tr>`;
+      });
+
+      tbody.innerHTML = rowsHtml;
+
+    } else {
+      thCol1.textContent = '부품명';
+      thCol2.textContent = 'EQP ID (교체주기 및 잔여일수)';
+      const eqpIds = Object.keys(db.equipments);
+      let maxHistoryLen = MIN_HISTORY_COLS;
+
+      eqpIds.forEach(eqpId => {
+        const list = getFilteredHistory(eqpId, selectedPart);
+        if (list.length + 1 > maxHistoryLen) maxHistoryLen = list.length + 1;
+      });
+      thHistory.setAttribute('colspan', maxHistoryLen);
+
+      const escPart = escapeHtml(selectedPart);
+      const safePart = selectedPart.replace(/'/g, "\'");
+      let rowsHtml = '';
+
+      eqpIds.forEach((eqpId, idx) => {
+        const filteredRecords = getFilteredHistory(eqpId, selectedPart);
+        const escEqp = escapeHtml(eqpId);
+        const cycleInfo = getPartCycleStatus(eqpId, selectedPart);
+
+        let cellsHtml = '';
+        for (let c = 0; c < maxHistoryLen; c++) {
+          const item = filteredRecords[c];
+          if (item) {
+            const badgeLabel = item.type === 'CLEAN' ? 'CLEAN' : '교체';
+            cellsHtml += `
+              <td class="date-cell type-${escapeHtml(item.type)}"
+                  onclick="openEditCellModal('${escEqp}', '${safePart}', ${item._origIdx})">
+                <span class="cell-badge ${escapeHtml(item.type)}">${badgeLabel}</span>
+                <span class="cell-date-text">${escapeHtml(item.date)}</span>
+              </td>`;
+          } else {
+            cellsHtml += `
+              <td class="date-cell empty-cell"
+                  onclick="openEditCellModal('${escEqp}', '${safePart}', -1)"></td>`;
+          }
+        }
+
+        rowsHtml += `
+          <tr>
+            ${idx === 0 ? `<td class="eqp-id-cell" rowspan="${eqpIds.length}">${escPart}</td>` : ''}
+            <td class="part-cell">
+              <div class="part-cell-inner">
+                <div class="part-info-area">
+                  <div class="part-name-btn" title="클릭 시 ${escEqp} 설비에 오늘 날짜 자동 기록"
+                       onclick="recordTodayQuick('${escEqp}', '${safePart}', currentWorkMode)">
+                    <span>${escEqp}</span>
+                  </div>
+                  <span class="cycle-status-badge status-${cycleInfo.status}">${cycleInfo.text}</span>
+                </div>
+                <div class="quick-actions">
+                  <button type="button" class="q-btn rep" onclick="recordTodayQuick('${escEqp}', '${safePart}', 'REPLACE')">교체</button>
+                  <button type="button" class="q-btn cln" onclick="recordTodayQuick('${escEqp}', '${safePart}', 'CLEAN')">CLEAN</button>
+                </div>
+              </div>
+            </td>
+            ${cellsHtml}
+          </tr>`;
+      });
+
+      tbody.innerHTML = rowsHtml;
+    }
+  }
+
+  function recordTodayQuick(eqpId, partName, workType) {
+    const today = getTodayFormatted();
+    const eqp = db.equipments[eqpId];
+    if (!eqp) return;
+    if (!eqp.history[partName]) eqp.history[partName] = [];
+    const list = eqp.history[partName];
+
+    const workLabel = workType === 'CLEAN' ? 'CLEAN(세정)' : '교체';
+    const duplicate = list.find(item => item.date === today && item.type === workType);
+
+    if (duplicate) {
+      document.getElementById('alertModalMsg').innerHTML =
+        `[${escapeHtml(eqpId)}] 설비의 <b>${escapeHtml(partName)}</b> 부품은<br/>오늘 날짜(<b>${today}</b>)로 <b>[${workLabel}]</b> 이력이 이미 입력되었습니다.`;
+      document.getElementById('alertModal').classList.add('show');
+      return;
+    }
+
+    list.push({ date: today, type: workType, note: '' });
+    sortHistoryList(list);
+    saveAndSync(`[${eqpId}] ${partName} - 오늘(${today}) [${workLabel}] 이력이 기록되었습니다.`);
+  }
+
+  function openEditCellModal(eqpId, partName, recordIndex) {
+    editingContext = { eqpId, partName, recordIndex };
+    const list = (db.equipments[eqpId] && db.equipments[eqpId].history[partName]) || [];
+    const isNew = recordIndex === -1 || !list[recordIndex];
+
+    document.getElementById('editModalTitle').textContent = isNew ? '➕ 이력 날짜 수동 추가' : '📅 이력 날짜 및 작업 구분 수정';
+    document.getElementById('editModalSub').textContent = `설비: ${eqpId} | 부품: ${partName}`;
+    document.getElementById('btnDeleteRecord').style.display = isNew ? 'none' : 'inline-flex';
+
+    const record = isNew ? { date: getTodayFormatted(), type: currentWorkMode, note: '' } : list[recordIndex];
+    document.getElementById('editWorkType').value = record.type || 'REPLACE';
+    document.getElementById('editDateText').value = record.date || getTodayFormatted();
+    document.getElementById('editDatePicker').value = yyMmDdToIso(record.date || getTodayFormatted());
+    document.getElementById('editNoteText').value = record.note || '';
+
+    document.getElementById('editCellModal').classList.add('show');
+  }
+
+  function syncPickerToText(isoVal) {
+    const formatted = isoToYyMmDd(isoVal);
+    if (formatted) document.getElementById('editDateText').value = formatted;
+  }
+
+  function saveHistoryRecord() {
+    if (!editingContext) return;
+    const { eqpId, partName, recordIndex } = editingContext;
+    const workType = document.getElementById('editWorkType').value;
+    const dateVal = document.getElementById('editDateText').value.trim();
+    const noteVal = document.getElementById('editNoteText').value.trim();
+
+    if (!dateVal) {
+      alert('날짜를 입력해주세요 (예: 26.10.17)');
+      return;
+    }
+
+    if (!db.equipments[eqpId].history[partName]) {
+      db.equipments[eqpId].history[partName] = [];
+    }
+    const list = db.equipments[eqpId].history[partName];
+
+    if (recordIndex === -1) {
+      list.push({ date: dateVal, type: workType, note: noteVal });
+    } else if (list[recordIndex]) {
+      list[recordIndex] = { date: dateVal, type: workType, note: noteVal };
+    }
+
+    sortHistoryList(list);
+    closeModal('editCellModal');
+    saveAndSync(`[${eqpId}] ${partName} 이력이 저장되었습니다.`);
+  }
+
+  function deleteHistoryRecord() {
+    if (!editingContext) return;
+    const { eqpId, partName, recordIndex } = editingContext;
+    const list = db.equipments[eqpId].history[partName];
+    if (recordIndex >= 0 && list && list[recordIndex]) {
+      list.splice(recordIndex, 1);
+      closeModal('editCellModal');
+      saveAndSync(`[${eqpId}] ${partName} 이력이 삭제되었습니다.`);
+    }
+  }
+
+  function openEqpModal() {
+    document.getElementById('newEqpIdInput').value = '';
+    document.getElementById('eqpModal').classList.add('show');
+    setTimeout(() => document.getElementById('newEqpIdInput').focus(), 50);
+  }
+
+  function addEqpId() {
+    const newId = document.getElementById('newEqpIdInput').value.trim().toUpperCase();
+    if (!newId) return alert('EQP ID를 입력해주세요.');
+    if (db.equipments[newId]) return alert('이미 등록된 EQP ID입니다.');
+
+    const historyObj = {};
+    db.partsCatalog.forEach(p => { historyObj[p] = []; });
+
+    db.equipments[newId] = {
+      parts: [...db.partsCatalog],
+      history: historyObj
+    };
+    selectedEqp = newId;
+    closeModal('eqpModal');
+    renderSelectors();
+    saveAndSync(`신규 설비 [${newId}]가 추가되었습니다.`);
+  }
+
+  function openPartModal() {
+    document.getElementById('newPartNameInput').value = '';
+    document.getElementById('newPartCycleInput').value = '';
+    document.getElementById('partModal').classList.add('show');
+    setTimeout(() => document.getElementById('newPartNameInput').focus(), 50);
+  }
+
+  function addPartName() {
+    const partName = document.getElementById('newPartNameInput').value.trim();
+    const cycleInput = document.getElementById('newPartCycleInput').value.trim().toUpperCase();
+    const scope = document.getElementById('newPartScope').value;
+
+    if (!partName) return alert('부품명을 입력해주세요.');
+
+    if (cycleInput) {
+      const parsedDays = parseCycleToDays(cycleInput);
+      if (parsedDays === null) {
+        return alert('교체주기 형식 오류입니다! 숫자 뒤에 D, M, Y 중 하나를 붙여서 입력해주세요. (예: 30D, 3M, 1Y)');
+      }
+    }
+
+    if (!db.partsCatalog.includes(partName)) {
+      db.partsCatalog.push(partName);
+    }
+    if (!db.partCycles) db.partCycles = {};
+    if (cycleInput) {
+      db.partCycles[partName] = cycleInput;
+    }
+
+    if (scope === 'ALL') {
+      Object.keys(db.equipments).forEach(eqpId => {
+        const eqp = db.equipments[eqpId];
+        if (!eqp.parts.includes(partName)) eqp.parts.push(partName);
+        if (!eqp.history[partName]) eqp.history[partName] = [];
+      });
+    } else {
+      const eqp = db.equipments[selectedEqp];
+      if (eqp) {
+        if (!eqp.parts.includes(partName)) eqp.parts.push(partName);
+        if (!eqp.history[partName]) eqp.history[partName] = [];
+      }
+    }
+
+    selectedPart = partName;
+    closeModal('partModal');
+    renderSelectors();
+    saveAndSync(`부품 [${partName}] (주기: ${cycleInput || '미설정'})이(가) 추가되었습니다.`);
+  }
+
+  async function saveAndSync(toastText) {
+    saveLocalDb();
+    renderMainTable();
+    if (toastText) showToast(toastText);
+    await pushToGitHub();
+  }
+
+  function getGithubConfig() {
+    try {
+      const raw = SafeStorage.getItem(GH_CONFIG_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { owner: '', repo: '', branch: 'main', path: 'data/eqp_history.json', token: '' };
+  }
+
+  function isGithubConfigured(cfg) {
+    return cfg && cfg.owner && cfg.repo && cfg.path && cfg.token;
+  }
+
+  function openGithubModal() {
+    const cfg = getGithubConfig();
+    document.getElementById('ghOwner').value = cfg.owner || '';
+    document.getElementById('ghRepo').value = cfg.repo || '';
+    document.getElementById('ghBranch').value = cfg.branch || 'main';
+    document.getElementById('ghPath').value = cfg.path || 'data/eqp_history.json';
+    document.getElementById('ghToken').value = cfg.token || '';
+    document.getElementById('githubModal').classList.add('show');
+  }
+
+  async function saveGithubConfigAndSync() {
+    const cfg = {
+      owner: document.getElementById('ghOwner').value.trim(),
+      repo: document.getElementById('ghRepo').value.trim(),
+      branch: document.getElementById('ghBranch').value.trim() || 'main',
+      path: document.getElementById('ghPath').value.trim() || 'data/eqp_history.json',
+      token: document.getElementById('ghToken').value.trim()
+    };
+    SafeStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
+    closeModal('githubModal');
+
+    if (!isGithubConfigured(cfg)) {
+      updateSyncBadge('local', '💾 로컬 저장 모드');
+      document.getElementById('btnRefreshGithub').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('btnRefreshGithub').style.display = 'inline-flex';
+    const pulled = await pullFromGitHub(false);
+    if (!pulled) {
+      await pushToGitHub();
+    }
+  }
+
+  function checkUrlGithubParams() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ghParam = params.get('ghconfig');
+      if (ghParam) {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(ghParam))));
+        if (decoded && decoded.owner && decoded.repo) {
+          SafeStorage.setItem(GH_CONFIG_KEY, JSON.stringify(decoded));
+          if (window.location.protocol !== 'file:') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+          showToast('🔗 공유 링크를 통해 GitHub 서버 연동 설정이 자동 적용되었습니다.');
+        }
+      }
+    } catch (e) {}
+  }
+
+  function copyShareableUrl() {
+    const cfg = {
+      owner: document.getElementById('ghOwner').value.trim(),
+      repo: document.getElementById('ghRepo').value.trim(),
+      branch: document.getElementById('ghBranch').value.trim() || 'main',
+      path: document.getElementById('ghPath').value.trim() || 'data/eqp_history.json',
+      token: document.getElementById('ghToken').value.trim()
+    };
+    if (!isGithubConfigured(cfg)) {
+      return alert('먼저 GitHub Owner, Repo, Token을 모두 입력해주세요.');
+    }
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(cfg))));
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?ghconfig=${encodeURIComponent(encoded)}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showToast('🔗 팀원 공유용 URL이 클립보드에 복사되었습니다!');
+      }).catch(() => {
+        prompt('아래 공유 링크를 복사하세요:', shareUrl);
+      });
+    } else {
+      prompt('아래 공유 링크를 복사하세요:', shareUrl);
+    }
+  }
+
+  async function initGithubAutoSync() {
+    const cfg = getGithubConfig();
+    if (isGithubConfigured(cfg)) {
+      document.getElementById('btnRefreshGithub').style.display = 'inline-flex';
+      await pullFromGitHub(false);
+    }
+  }
+
+  async function pullFromGitHub(showNotice) {
+    const cfg = getGithubConfig();
+    if (!isGithubConfigured(cfg)) return false;
+
+    updateSyncBadge('saving', '🔄 GitHub 서버 조회 중...');
+    try {
+      const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${cfg.token}`,
+          'Accept': 'application/vnd.github+json'
+        }
+      });
+
+      if (res.status === 404) {
+        updateSyncBadge('online', '☁️ GitHub 신규 파일 생성 대기');
+        return false;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      githubFileSha = data.sha;
+      const cleanBase64 = (data.content || '').replace(/\s+/g, '');
+      const contentStr = decodeURIComponent(escape(atob(cleanBase64)));
+      const remoteDb = JSON.parse(contentStr);
+
+      if (remoteDb && remoteDb.equipments) {
+        db = remoteDb;
+        if (!db.partCycles) db.partCycles = {};
+        saveLocalDb();
+        renderSelectors();
+        renderMainTable();
+        updateSyncBadge('online', `☁️ GitHub 동기화 완료 (${cfg.owner}/${cfg.repo})`);
+        if (showNotice) showToast('☁️ GitHub 서버에서 최신 데이터를 불러왔습니다.');
+        return true;
+      }
+    } catch (err) {
+      updateSyncBadge('error', '⚠️ GitHub 연동 오류 (설정 확인)');
+    }
+    return false;
+  }
+
+  async function pushToGitHub() {
+    const cfg = getGithubConfig();
+    if (!isGithubConfigured(cfg)) return;
+
+    updateSyncBadge('saving', '☁️ GitHub 저장 중...');
+    try {
+      const getUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`;
+      const getRes = await fetch(getUrl, {
+        headers: {
+          'Authorization': `Bearer ${cfg.token}`,
+          'Accept': 'application/vnd.github+json'
+        }
+      });
+      if (getRes.ok) {
+        const meta = await getRes.json();
+        githubFileSha = meta.sha;
+      }
+
+      const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
+      const bodyPayload = {
+        message: `Update EQP History (${getTodayFormatted()})`,
+        content: contentBase64,
+        branch: cfg.branch
+      };
+      if (githubFileSha) bodyPayload.sha = githubFileSha;
+
+      const putUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+      const putRes = await fetch(putUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${cfg.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyPayload)
+      });
+
+      if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
+      const putData = await putRes.json();
+      githubFileSha = putData.content.sha;
+      updateSyncBadge('online', `☁️ GitHub 저장 완료 (${new Date().toLocaleTimeString()})`);
+    } catch (err) {
+      updateSyncBadge('error', '⚠️ GitHub 저장 실패 (권한/경로 확인)');
+    }
+  }
+
+  function updateSyncBadge(state, text) {
+    const badge = document.getElementById('syncStatusBadge');
+    badge.className = 'sync-badge ' + (state === 'online' ? 'online' : state === 'saving' ? 'saving' : state === 'error' ? 'error' : '');
+    badge.textContent = text;
+  }
+
+  function exportJsonFile() {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `eqp_part_history_${getTodayFormatted()}.json`;
+    a.click();
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById('toastMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
