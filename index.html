@@ -512,12 +512,12 @@
       <div class="form-group">
         <label>추가 적용 범위</label>
         <select id="newPartScope" onchange="onNewPartScopeChange(this.value)">
+          <option value="ALL" selected>전체 설비(모든 EQP ID)에 공통 추가</option>
           <option value="PRC">🏢 선택 PRC Group에 공통 추가</option>
-          <option value="ALL">전체 설비(모든 EQP ID)에 공통 추가</option>
           <option value="CURRENT">현재 선택된 설비에만 추가</option>
         </select>
       </div>
-      <div class="form-group" id="newPartPrcGroupSelectWrap">
+      <div class="form-group" id="newPartPrcGroupSelectWrap" style="display:none;">
         <label>대상 PRC Group 선택</label>
         <select id="newPartTargetPrcSelect"></select>
       </div>
@@ -535,12 +535,12 @@
       <div class="form-group">
         <label>삭제 적용 범위</label>
         <select id="delPartScope" onchange="onDelPartScopeChange(this.value)">
+          <option value="ALL" selected>전체 설비 및 카탈로그에서 완전히 삭제</option>
           <option value="PRC">🏢 선택 PRC Group 소속 설비에서만 삭제</option>
-          <option value="ALL">전체 설비 및 카탈로그에서 완전히 삭제</option>
           <option value="CURRENT">현재 선택된 설비(<span id="delPartTargetEqpLabel"></span>)에서만 제거</option>
         </select>
       </div>
-      <div class="form-group" id="delPartPrcGroupSelectWrap">
+      <div class="form-group" id="delPartPrcGroupSelectWrap" style="display:none;">
         <label>대상 PRC Group 선택</label>
         <select id="delPartTargetPrcSelect" onchange="renderDeletePartList()"></select>
       </div>
@@ -558,9 +558,9 @@
 <!-- 6. GitHub 서버 연동 모달 -->
 <div class="modal-backdrop" id="githubModal">
   <div class="modal" style="max-width:520px;">
-    <h3>☁️ GitHub 서버 데이터 공유 설정</h3>
+    <h3>☁️ GitHub 서버 데이터 공유 설정(수정금지)</h3>
     <p>
-      GitHub Repository의 JSON 파일을 데이터베이스로 사용하여, <b>누구나 접속 시 동일한 최신 데이터를 조회하고 입력 즉시 GitHub 서버에 자동 저장</b>합니다.
+      ★관리자 외 임의수정 금지★GitHub Repository의 JSON 파일을 데이터베이스로 사용하여, <b>누구나 접속 시 동일한 최신 데이터를 조회하고 입력 즉시 GitHub 서버에 자동 저장</b>합니다.
     </p>
     <div class="form-group">
       <label>GitHub Owner (계정명 또는 조직명)</label>
@@ -1343,10 +1343,10 @@
     document.getElementById('newPartTargetPrcSelect').innerHTML = prcOptHtml;
     document.getElementById('delPartTargetPrcSelect').innerHTML = prcOptHtml;
 
-    document.getElementById('newPartScope').value = 'PRC';
-    document.getElementById('delPartScope').value = 'PRC';
-    onNewPartScopeChange('PRC');
-    onDelPartScopeChange('PRC');
+    document.getElementById('newPartScope').value = 'ALL';
+    document.getElementById('delPartScope').value = 'ALL';
+    onNewPartScopeChange('ALL');
+    onDelPartScopeChange('ALL');
 
     switchPartManageSubTab('ADD');
     document.getElementById('partModal').classList.add('show');
