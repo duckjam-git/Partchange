@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-18T04:26:15.893Z",
+  "updatedAt": "2026-10-18T06:19:39.002Z",
   "partsCatalog": [
     "AMU Graphite",
     "TP1 Foreline&Trap Filter",
@@ -49,6 +49,12 @@
             "date": "26.10.17",
             "type": "CLEAN",
             "note": ""
+          },
+          {
+            "date": "26.10.18",
+            "type": "REPLACE",
+            "note": "",
+            "updatedAt": "2026-10-18T06:19:38.581Z"
           }
         ],
         "SRA": [
